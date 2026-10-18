@@ -47,6 +47,7 @@ class CanningMachine {
         Stop = 0,
         Start,
         Pause,
+        Resume,
         Unknown
     };
 

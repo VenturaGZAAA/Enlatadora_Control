@@ -44,7 +44,6 @@ void CanningMachine::start() {
         authorizedSystem = false;
         startTask();
     }
-
 }
 
 void CanningMachine::startTask(const UBaseType_t priority,
@@ -99,7 +98,6 @@ bool CanningMachine::readInput(const int index, const bool update) {
 }
 
 [[noreturn]] void CanningMachine::autoUpdateLoop() {
-
     while (true) {
         for (int i = 0; i < NUM_INPUTS; i++) {
             readInput(i, true);
@@ -227,7 +225,6 @@ void CanningMachine::allOff() {
 }
 
 void CanningMachine::processTextCommands(const char *command) {
-
     const auto cmd = String(command);
 
     const String msg = "Command received: " + cmd;
@@ -239,18 +236,23 @@ void CanningMachine::processTextCommands(const char *command) {
         allowOutputOverride = false;
     } else if (cmd == "Start") {
         processCommand(Commands::Start);
-    }
-    else if (cmd == "Stop") {
+    } else if (cmd == "Stop") {
         processCommand(Commands::Stop);
-    }
-    else if (cmd == "Pause") {
+    } else if (cmd == "Pause") {
         processCommand(Commands::Pause);
+    } else if (cmd == "Resume") {
+        processCommand(Commands::Resume);
     }
 }
 
 
 void CanningMachine::processCommand(const Commands command) {
     switch (command) {
+        case Commands::Start:
+            start();
+            if (onStartCommand)
+                onStartCommand();
+            break;
         case Commands::Stop:
             stop();
             if (onStopCommand)
@@ -261,12 +263,14 @@ void CanningMachine::processCommand(const Commands command) {
             if (onPauseCommand)
                 onPauseCommand();
             break;
-        case Commands::Start:
-            start();
-            if (onStartCommand)
-                onStartCommand();
+
+        case Commands::Resume:
+            softwarePause = false;
+            // if (onResumeCommand)
+            //     onResumeCommand();
             break;
-        default:
+
+        case Commands::Unknown:
             break;
     }
 }
@@ -284,13 +288,12 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 }
 
 void CanningMachine::updateAuthorization() {
-    if (!readInput(4)) authorizedSystem = true;
     if (readInput(5)) authorizedSystem = false;
+    else if (!readInput(4)) authorizedSystem = true;
 }
 
 
 [[noreturn]] void CanningMachine::run() {
-
     for (;;) {
         updateAuthorization();
 
