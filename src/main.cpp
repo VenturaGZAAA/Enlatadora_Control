@@ -11,7 +11,7 @@ void setup() {
     CanningMachine::setup(true);
 
     SerialMonitor::registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
-    SerialMonitor::registerCallback(CanningMachine::processCommands);
+    SerialMonitor::registerCallback(CanningMachine::processTextCommands);
 
     CanningMachine::setOnStopCallback([] {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Red(), 1000);

@@ -70,10 +70,11 @@ class CanningMachine {
     static inline bool setUp = false;
 
     static inline auto stage = Stage::Reposo;
-    static inline bool sistemaAutorizado = false;
+    static inline bool authorizedSystem = false;
 
     static inline bool machineRunning = false;
-    static inline bool machinePaused = false;
+    static inline bool emergencyPause = false;
+    static inline bool softwarePause = false;
 
     static inline bool allowOutputOverride = true;
     static inline TaskHandle_t taskHandle = nullptr;
@@ -118,7 +119,7 @@ public:
 
     static String getStage();
     static bool isRunning() {return machineRunning;}
-    static bool isPaused() {return machinePaused;}
+    static bool isPaused() {return emergencyPause;}
 
     static String getSerializedState();
 
@@ -126,7 +127,7 @@ public:
 
     static void outputsWriteJsonCallback(const JsonDocument &doc);
 
-    static void processCommands(const char *command);
+    static void processTextCommands(const char *command);
 
     static void setOnStopCallback(std::function<void()> callback);
     static void setOnStartCallback(std::function<void()> callback);

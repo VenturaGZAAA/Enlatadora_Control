@@ -33,7 +33,7 @@ void CanningMachine::startAutoUpdate() {
     }
 }
 
-void CanningMachine::begin() {
+void CanningMachine::start() {
     if (!setUp) {
         SerialMonitor::enqueueLine("Canning machine has not been set up");
         return;
@@ -41,7 +41,7 @@ void CanningMachine::begin() {
 
     if (taskHandle == nullptr) {
         stage = Stage::Reposo;
-        sistemaAutorizado = false;
+        authorizedSystem = false;
         startTask();
     }
 
@@ -154,7 +154,7 @@ String CanningMachine::getStage() {
 String CanningMachine::getSerializedState() {
     JsonDocument jsonDoc;
     jsonDoc["running"] = machineRunning;
-    jsonDoc["paused"] = machinePaused;
+    jsonDoc["paused"] = emergencyPause;
     jsonDoc["stage"] = getStage();
     jsonDoc["output_override"] = allowOutputOverride;
     String jsonOutput;
@@ -196,7 +196,7 @@ void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
                     SerialMonitor::enqueueLine("Output override not enabled");
                     return;
                 }
-                if (machineRunning && !machinePaused) {
+                if (machineRunning && !emergencyPause) {
                     SerialMonitor::enqueueLine(
                         "Output override while the machine is running and not paused is not allowed");
                     return;
@@ -226,7 +226,7 @@ void CanningMachine::allOff() {
     }
 }
 
-void CanningMachine::processCommands(const char *command) {
+void CanningMachine::processTextCommands(const char *command) {
 
     const auto cmd = String(command);
 
@@ -257,6 +257,7 @@ void CanningMachine::processCommand(const Commands command) {
                 onStopCommand();
             break;
         case Commands::Pause:
+            softwarePause = true;
             if (onPauseCommand)
                 onPauseCommand();
             break;
@@ -283,8 +284,8 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 }
 
 void CanningMachine::updateAuthorization() {
-    if (!readInput(4)) sistemaAutorizado = true;
-    if (readInput(5)) sistemaAutorizado = false;
+    if (!readInput(4)) authorizedSystem = true;
+    if (readInput(5)) authorizedSystem = false;
 }
 
 
@@ -298,7 +299,7 @@ void CanningMachine::updateAuthorization() {
                 if (!allowOutputOverride) {
                     allOff();
                 }
-                if (sistemaAutorizado) {
+                if (authorizedSystem) {
                     stage = Stage::EsperaLata;
                 } else {
                     delay(1);
@@ -308,7 +309,7 @@ void CanningMachine::updateAuthorization() {
             case Stage::EsperaLata:
                 writeOutput(16, true);
 
-                while (readInput(3) && sistemaAutorizado) {
+                while (readInput(3) && authorizedSystem) {
                     delay(1);
                     updateAuthorization();
                 }
@@ -316,7 +317,7 @@ void CanningMachine::updateAuthorization() {
                 // Original priority: sensor first, then authorization.
                 if (!readInput(3)) {
                     stage = Stage::TopeActivo;
-                } else if (!sistemaAutorizado) {
+                } else if (!authorizedSystem) {
                     stage = Stage::Reposo;
                 }
                 break;
@@ -507,7 +508,7 @@ void CanningMachine::updateAuthorization() {
             case Stage::ApagarBanda3YRepetir:
                 writeOutput(14, false);
 
-                if (sistemaAutorizado) {
+                if (authorizedSystem) {
                     stage = Stage::EsperaLata;
                 } else {
                     stage = Stage::Reposo;
@@ -524,7 +525,7 @@ void CanningMachine::stop() {
         taskHandle = nullptr;
         allOff();
         machineRunning = false;
-        sistemaAutorizado = false;
+        authorizedSystem = false;
         stage = Stage::Reposo;
     }
     // stopAutoUpdate();
