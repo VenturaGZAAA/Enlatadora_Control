@@ -74,11 +74,10 @@ class CanningMachine {
     static inline bool authorizedSystem = false;
 
     static inline bool machineRunning = false;
-    static inline bool emergencyPause = false;
+    static inline bool hardwarePause = false;
     static inline bool softwarePause = false;
 
-    static inline bool allowOutputOverride = true;
-    static inline TaskHandle_t taskHandle = nullptr;
+    static inline TaskHandle_t logicLoopHandle = nullptr;
 
     [[noreturn]] static void run();
 
@@ -118,9 +117,8 @@ public:
 
     static String getJsonInputs();
 
-    static String getStage();
     static bool isRunning() {return machineRunning;}
-    static bool isPaused() {return emergencyPause;}
+    static bool isPaused() {return hardwarePause;}
 
     static String getSerializedState();
 

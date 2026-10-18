@@ -39,7 +39,7 @@ void CanningMachine::start() {
         return;
     }
 
-    if (taskHandle == nullptr) {
+    if (logicLoopHandle == nullptr) {
         stage = Stage::Reposo;
         authorizedSystem = false;
         startTask();
@@ -55,7 +55,7 @@ void CanningMachine::startTask(const UBaseType_t priority,
         stackSize,
         nullptr,
         priority,
-        &taskHandle,
+        &logicLoopHandle,
         core
     );
 }
@@ -140,21 +140,14 @@ const char *CanningMachine::stageName(const Stage s) {
     return "Desconocido";
 }
 
-String CanningMachine::getStage() {
-    String result;
-    result.reserve(40);
-    result += static_cast<int>(stage);
-    result += "-";
-    result += stageName(stage);
-    return result;
-}
 
 String CanningMachine::getSerializedState() {
     JsonDocument jsonDoc;
     jsonDoc["running"] = machineRunning;
-    jsonDoc["paused"] = emergencyPause;
-    jsonDoc["stage"] = getStage();
-    jsonDoc["output_override"] = allowOutputOverride;
+    jsonDoc["emergency"] = hardwarePause;
+    jsonDoc["paused"] = softwarePause;
+    jsonDoc["stage_name"] = stageName(stage);
+    jsonDoc["stage_num"] = static_cast<int>(stage);
     String jsonOutput;
     serializeJson(jsonDoc, jsonOutput);
     return jsonOutput;
@@ -190,11 +183,12 @@ void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
     for (int i = 0; i < NUM_OUTPUTS; ++i) {
         if (doc["Q" + String(i)].is<bool>()) {
             if (!authorized) {
-                if (!allowOutputOverride) {
-                    SerialMonitor::enqueueLine("Output override not enabled");
+                if (hardwarePause) {
+                    SerialMonitor::enqueueLine("Output override while the machine is paused is not allowed");
                     return;
                 }
-                if (machineRunning && !emergencyPause) {
+
+                if ((machineRunning && !softwarePause)) {
                     SerialMonitor::enqueueLine(
                         "Output override while the machine is running and not paused is not allowed");
                     return;
@@ -522,10 +516,10 @@ void CanningMachine::updateAuthorization() {
 }
 
 void CanningMachine::stop() {
-    if (taskHandle != nullptr) {
+    if (logicLoopHandle != nullptr) {
         SerialMonitor::enqueueLine("Stopping canning machine");
-        vTaskDelete(taskHandle);
-        taskHandle = nullptr;
+        vTaskDelete(logicLoopHandle);
+        logicLoopHandle = nullptr;
         allOff();
         machineRunning = false;
         authorizedSystem = false;
