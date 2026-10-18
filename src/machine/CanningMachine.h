@@ -85,9 +85,6 @@ class CanningMachine {
 
     static void updateAuthorization();
 
-    static void startTask(UBaseType_t priority = 1,
-                          uint32_t stackSize = 4096,
-                          BaseType_t core = 1);
 
     static void writeOutput(int index, bool value);
 
@@ -97,6 +94,7 @@ class CanningMachine {
     static inline TaskHandle_t autoUpdateTaskHandle = nullptr;
     [[noreturn]] static void autoUpdateLoop();
 
+    static Commands getCommandByName(const String& name);
     static void processCommand(Commands command);
     
     static inline std::function<void()> onStopCommand = nullptr;

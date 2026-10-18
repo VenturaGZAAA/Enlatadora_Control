@@ -24,11 +24,11 @@ void CanningMachine::startAutoUpdate() {
         xTaskCreatePinnedToCore(
             reinterpret_cast<TaskFunction_t>(autoUpdateLoop),
             "CanningMachineAutoUpdate",
-            1024,
+            2048,
             nullptr,
-            1,
+            2,
             &autoUpdateTaskHandle,
-            0
+            1
         );
     }
 }
@@ -42,22 +42,16 @@ void CanningMachine::start() {
     if (logicLoopHandle == nullptr) {
         stage = Stage::Reposo;
         authorizedSystem = false;
-        startTask();
+        xTaskCreatePinnedToCore(
+            reinterpret_cast<TaskFunction_t>(run),
+            "CanningMachine",
+            8096,
+            nullptr,
+            1,
+            &logicLoopHandle,
+            1
+        );
     }
-}
-
-void CanningMachine::startTask(const UBaseType_t priority,
-                               const uint32_t stackSize,
-                               const BaseType_t core) {
-    xTaskCreatePinnedToCore(
-        reinterpret_cast<TaskFunction_t>(run),
-        "CanningMachine",
-        stackSize,
-        nullptr,
-        priority,
-        &logicLoopHandle,
-        core
-    );
 }
 
 void CanningMachine::configurePins() {
@@ -187,7 +181,6 @@ void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
                     SerialMonitor::enqueueLine("Output override while the machine is paused is not allowed");
                     return;
                 }
-
                 if ((machineRunning && !softwarePause)) {
                     SerialMonitor::enqueueLine(
                         "Output override while the machine is running and not paused is not allowed");
@@ -218,21 +211,30 @@ void CanningMachine::allOff() {
     }
 }
 
+CanningMachine::Commands CanningMachine::getCommandByName(const String &name) {
+    if (name == "Start") {
+        return Commands::Start;
+    }
+    if (name == "Stop") {
+        return Commands::Stop;
+    }
+    if (name == "Pause") {
+        return Commands::Pause;
+    }
+    if (name == "Resume") {
+        return Commands::Resume;
+    }
+
+    return Commands::Unknown;
+}
+
 void CanningMachine::processTextCommands(const char *command) {
     const auto cmd = String(command);
 
     const String msg = "Command received: " + cmd;
     SerialMonitor::enqueueLine(msg);
 
-    if (cmd == "Start") {
-        processCommand(Commands::Start);
-    } else if (cmd == "Stop") {
-        processCommand(Commands::Stop);
-    } else if (cmd == "Pause") {
-        processCommand(Commands::Pause);
-    } else if (cmd == "Resume") {
-        processCommand(Commands::Resume);
-    }
+    processCommand(getCommandByName(cmd));
 }
 
 
@@ -261,6 +263,7 @@ void CanningMachine::processCommand(const Commands command) {
             break;
 
         case Commands::Unknown:
+            SerialMonitor::enqueueLine("Unknown command");
             break;
     }
 }
