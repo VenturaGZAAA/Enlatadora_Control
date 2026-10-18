@@ -247,13 +247,16 @@ void CanningMachine::processCommand(const Commands command) {
             break;
         case Commands::Stop:
             stop();
+            softwarePause = false;
             if (onStopCommand)
                 onStopCommand();
             break;
         case Commands::Pause:
-            softwarePause = true;
-            if (onPauseCommand)
-                onPauseCommand();
+            if (machineRunning) {
+                softwarePause = true;
+                if (onPauseCommand)
+                    onPauseCommand();
+            }
             break;
 
         case Commands::Resume:
