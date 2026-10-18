@@ -224,11 +224,7 @@ void CanningMachine::processTextCommands(const char *command) {
     const String msg = "Command received: " + cmd;
     SerialMonitor::enqueueLine(msg);
 
-    if (cmd == "AuthorizeOutputOverride") {
-        allowOutputOverride = true;
-    } else if (cmd == "DisableOutputOverride") {
-        allowOutputOverride = false;
-    } else if (cmd == "Start") {
+    if (cmd == "Start") {
         processCommand(Commands::Start);
     } else if (cmd == "Stop") {
         processCommand(Commands::Stop);
@@ -286,16 +282,37 @@ void CanningMachine::updateAuthorization() {
     else if (!readInput(4)) authorizedSystem = true;
 }
 
+void CanningMachine::pausableDelay(const uint32_t ms) {
+    for (uint32_t i = 0; i < ms; i++) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+        if (isPaused()) {
+            const auto snapshot = outputState;
+            allOff();
+            while (isPaused()) {
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
+            updateAuthorization();
+            if (!authorizedSystem) {
+                stage = Stage::Reposo;
+                return;
+            }
+
+            for (int o = 0; o < NUM_OUTPUTS; o++) {
+                writeOutput(o, snapshot[o]);
+            }
+        }
+    }
+}
 
 [[noreturn]] void CanningMachine::run() {
+    machineRunning = true;
+    allOff();
     for (;;) {
         updateAuthorization();
 
         switch (stage) {
             case Stage::Reposo:
-                if (!allowOutputOverride) {
-                    allOff();
-                }
+                allOff();
                 if (authorizedSystem) {
                     stage = Stage::EsperaLata;
                 } else {

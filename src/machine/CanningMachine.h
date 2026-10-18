@@ -104,6 +104,7 @@ class CanningMachine {
     static inline std::function<void()> onPauseCommand = nullptr;
 
     static void start();
+    static void pausableDelay(uint32_t ms);
     static void stop();
 public:
     CanningMachine() = delete;
@@ -118,7 +119,7 @@ public:
     static String getJsonInputs();
 
     static bool isRunning() {return machineRunning;}
-    static bool isPaused() {return hardwarePause;}
+    static bool isPaused() {return hardwarePause || softwarePause;}
 
     static String getSerializedState();
 
