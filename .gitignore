@@ -1,0 +1,7 @@
+.pio
+.idea
+.vscode
+
+src/config/secrets.h
+src/config/build_flags.h
+compile_commands.json
