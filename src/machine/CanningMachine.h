@@ -102,7 +102,7 @@ class CanningMachine {
     static inline std::function<void()> onStartCommand = nullptr;
     static inline std::function<void()> onPauseCommand = nullptr;
 
-    static void begin();
+    static void start();
     static void stop();
 public:
     CanningMachine() = delete;

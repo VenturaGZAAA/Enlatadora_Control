@@ -261,7 +261,7 @@ void CanningMachine::processCommand(const Commands command) {
                 onPauseCommand();
             break;
         case Commands::Start:
-            begin();
+            start();
             if (onStartCommand)
                 onStartCommand();
             break;
