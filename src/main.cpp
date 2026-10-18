@@ -9,7 +9,6 @@ void setup() {
     EvenTheRGBLedHasManagers::init();
 
     CanningMachine::setup(true);
-
     SerialMonitor::registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     SerialMonitor::registerCallback(CanningMachine::processTextCommands);
 
