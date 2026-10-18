@@ -148,6 +148,8 @@ String CanningMachine::getSerializedState() {
     jsonDoc["paused"] = softwarePause;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
+    jsonDoc["inputs"] = getJsonInputs();
+    jsonDoc["outputs"] = getJsonOutputs();
     String jsonOutput;
     serializeJson(jsonDoc, jsonOutput);
     return jsonOutput;
@@ -159,7 +161,6 @@ String CanningMachine::getJsonOutputs() {
     for (int i = 0; i < NUM_OUTPUTS; ++i) {
         jsonDoc["Q" + String(i)] = outputState[i];
     }
-
     String jsonOutput;
     serializeJson(jsonDoc, jsonOutput);
     return jsonOutput;
@@ -168,7 +169,6 @@ String CanningMachine::getJsonOutputs() {
 
 String CanningMachine::getJsonInputs() {
     JsonDocument jsonDoc;
-
     for (int i = 0; i < NUM_INPUTS; ++i) {
         jsonDoc["I" + String(i)] = inputState[i];
     }
