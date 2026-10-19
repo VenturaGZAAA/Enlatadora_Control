@@ -5,13 +5,13 @@
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
 #include "drivers/universal/UARTManager.h"
 
-static auto  testUart = UARTManager::reserve();
+static auto  master = UARTManager::reserve();
 
 void setup() {
     SerialMonitor::init();
     EvenTheRGBLedHasManagers::init();
 
-    testUart = UARTManager::create(Serial1, 17, 18);
+    master = UARTManager::create(Serial1, 17, 18);
 
 
     CanningMachine::setup(true);
@@ -41,18 +41,16 @@ void setup() {
         return RGBColor();
     });
 
-    testUart->registerCallback(CanningMachine::processTextCommands);
-    testUart->registerCallback([](const char* S) {
-        SerialMonitor::enqueueLine("Whe got something within us: " + String(S));
+    master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
+    master->registerCallback(CanningMachine::processTextCommands);
+    master->registerCallback([](const char* S) {
+        SerialMonitor::enqueueLine("Command received: " + String(S));
     });
-    testUart->init();
+    master->init();
 
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(750));
-    testUart->enqueueLine("It ;s i, the contr0olleeer");
-    vTaskDelay(pdMS_TO_TICKS(500));
-    testUart->enqueueLine(CanningMachine::getSerializedState());
-    SerialMonitor::enqueueLine("Loop done!");
+    vTaskDelay(pdMS_TO_TICKS(50));
+    master->enqueueLine(CanningMachine::getSerializedState());
 }

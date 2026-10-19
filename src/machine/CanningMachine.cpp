@@ -138,7 +138,7 @@ const char *CanningMachine::stageName(const Stage s) {
 String CanningMachine::getSerializedState() {
     JsonDocument jsonDoc;
     jsonDoc["running"] = machineRunning;
-    jsonDoc["emergency"] = hardwarePause;
+    jsonDoc["emergencyStop"] = hardwarePause;
     jsonDoc["paused"] = softwarePause;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
