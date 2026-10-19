@@ -11,7 +11,7 @@ void setup() {
     SerialMonitor::init();
     EvenTheRGBLedHasManagers::init();
 
-    testUart = UARTManager::create(Serial1, 10, 11);
+    testUart = UARTManager::create(Serial1, 17, 18);
 
 
     CanningMachine::setup(true);
@@ -54,4 +54,5 @@ void loop() {
     testUart->enqueueLine("It ;s i, the contr0olleeer");
     vTaskDelay(pdMS_TO_TICKS(500));
     testUart->enqueueLine(CanningMachine::getSerializedState());
+    SerialMonitor::enqueueLine("Loop done!");
 }

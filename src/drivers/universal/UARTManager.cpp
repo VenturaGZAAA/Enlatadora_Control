@@ -12,7 +12,7 @@ UARTManager::UARTManager(HardwareSerial &uartPort, const int8_t rxPin, const int
 
 void UARTManager::init() {
     uartPort.begin(baudRate, SERIAL_8N1, rxPin, txPin);
-    uartPort.setTimeout(100);
+    uartPort.setTimeout(1000);
     if (!queueMutex) {
         queueMutex = xSemaphoreCreateMutex();
     }
