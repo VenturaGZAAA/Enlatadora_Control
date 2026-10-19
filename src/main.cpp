@@ -8,10 +8,10 @@
 static auto  master = UARTManager::reserve();
 
 void setup() {
-    SerialMonitor::init();
+    // SerialMonitor::init();
     EvenTheRGBLedHasManagers::init();
 
-    master = UARTManager::create(Serial1, 17, 18);
+    master = UARTManager::create(Serial1, 44, 43);
 
 
     CanningMachine::setup(true);
