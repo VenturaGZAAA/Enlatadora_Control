@@ -142,35 +142,19 @@ String CanningMachine::getSerializedState() {
     jsonDoc["paused"] = softwarePause;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
-    jsonDoc["inputs"] = getJsonInputs();
-    jsonDoc["outputs"] = getJsonOutputs();
-    String jsonOutput;
-    serializeJson(jsonDoc, jsonOutput);
-    return jsonOutput;
-}
-
-String CanningMachine::getJsonOutputs() {
-    JsonDocument jsonDoc;
-
-    for (int i = 0; i < NUM_OUTPUTS; ++i) {
-        jsonDoc["Q" + String(i)] = outputState[i];
-    }
-    String jsonOutput;
-    serializeJson(jsonDoc, jsonOutput);
-    return jsonOutput;
-}
-
-
-String CanningMachine::getJsonInputs() {
-    JsonDocument jsonDoc;
+    const auto inputs = jsonDoc["inputs"].to<JsonObject>();
     for (int i = 0; i < NUM_INPUTS; ++i) {
-        jsonDoc["I" + String(i)] = inputState[i];
+        inputs["I" + String(i)] = inputState[i];
     }
-
+    const auto outputs = jsonDoc["outputs"].to<JsonObject>();
+    for (int i = 0; i < NUM_OUTPUTS; ++i) {
+        outputs["Q" + String(i)] = outputState[i];
+    }
     String jsonOutput;
     serializeJson(jsonDoc, jsonOutput);
     return jsonOutput;
 }
+
 
 void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
     bool authorized = false;

@@ -112,10 +112,6 @@ public:
     static void startAutoUpdate();
     static void stopAutoUpdate();
 
-    static String getJsonOutputs();
-
-    static String getJsonInputs();
-
     static bool isRunning() {return machineRunning;}
     static bool isPaused() {return hardwarePause || softwarePause;}
 
