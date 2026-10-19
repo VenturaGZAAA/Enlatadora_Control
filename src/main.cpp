@@ -3,6 +3,8 @@
 #include <drivers/universal/SerialMonitor.h>
 
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
+#include "drivers/universal/UARTManager.h"
+static UARTManager testUart = UARTManager( Serial1,10,11);
 
 void setup() {
     SerialMonitor::init();
@@ -35,8 +37,16 @@ void setup() {
         return RGBColor();
     });
 
+    testUart.registerCallback(CanningMachine::processTextCommands);
+
+
+    testUart.init();
+
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(750));
+    testUart.enqueueLine("Helloooo worudo");
+    vTaskDelay(pdMS_TO_TICKS(500));
+    testUart.enqueueLine(CanningMachine::getSerializedState());
 }
