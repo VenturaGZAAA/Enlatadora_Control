@@ -5,6 +5,7 @@
 #include <drivers/universal/wifi_secrets.h>
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
 #include "drivers/universal/UARTManager.h"
+#include "network/WebSeverManager.h"
 
 static auto  master = UARTManager::reserve();
 
@@ -54,6 +55,8 @@ void setup() {
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
+    WebSeverManager::enableOTASupport(nullptr, nullptr);
+    WebSeverManager::setup();
 }
 
 void loop() {
