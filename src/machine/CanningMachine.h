@@ -71,7 +71,7 @@ class CanningMachine {
     static inline bool setUp = false;
 
     static inline auto stage = Stage::Reposo;
-    static inline bool authorizedSystem = false;
+    static inline bool authorizedSystem = true;
 
     static inline bool machineRunning = false;
     static inline bool hardwarePause = false;
