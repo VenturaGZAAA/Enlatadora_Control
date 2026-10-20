@@ -6,4 +6,3 @@ src/config/secrets.h
 src/config/build_flags.h
 compile_commands.json
 src/drivers/universal/wifi_secrets.h
-src/drivers/universal/WifiManager.*

@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <machine/CanningMachine.h>
 #include <drivers/universal/SerialMonitor.h>
-
+#include <drivers/universal/WifiManager.h>
+#include <drivers/universal/wifi_secrets.h>
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
 #include "drivers/universal/UARTManager.h"
 
@@ -48,6 +49,11 @@ void setup() {
     });
     master->init();
 
+    WifiManager::forceSTA(SECRET_SSID,SECRET_PASSWORD);
+    WifiManager::setup();
+    if (WifiManager::isConnected()) {
+        EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
+    }
 }
 
 void loop() {
