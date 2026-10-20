@@ -48,7 +48,7 @@ void setup() {
         SerialMonitor::enqueueLine("Command received: " + String(S));
     });
     master->init();
-
+    WifiManager::setHostname("enlatadora-control");
     WifiManager::forceSTA(SECRET_SSID,SECRET_PASSWORD);
     WifiManager::setup();
     if (WifiManager::isConnected()) {
