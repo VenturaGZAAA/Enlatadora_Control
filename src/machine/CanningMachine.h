@@ -80,7 +80,7 @@ class CanningMachine {
 
     static inline TaskHandle_t logicLoopHandle = nullptr;
 
-    [[noreturn]] static void run();
+    static void run();
 
     static void configurePins();
 

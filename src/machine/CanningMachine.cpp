@@ -271,8 +271,8 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 }
 
 void CanningMachine::updateAuthorization() {
-    if (!readInput(4,true) || forcedAuthorization) authorizedSystem = true;
-    if (readInput(5,true)) authorizedSystem = false;
+    if (!readInput(4, true) || forcedAuthorization) authorizedSystem = true;
+    if (readInput(5, true)) authorizedSystem = false;
 }
 
 void CanningMachine::pausableDelay(const uint32_t ms) {
@@ -293,10 +293,11 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
     }
 }
 
-[[noreturn]] void CanningMachine::run() {
+void CanningMachine::run() {
     machineRunning = true;
+    bool runLoop = true;
     allOff();
-    for (;;) {
+    while (runLoop) {
         updateAuthorization();
 
         switch (stage) {
@@ -511,11 +512,17 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
             case Stage::Apagar:
                 writeOutput(14, false);
 
-                stop();
-                vTaskDelete(nullptr);
+                runLoop = false;
                 break;
         }
     }
+
+    allOff();
+    machineRunning = false;
+    forcedAuthorization = false;
+    stage = Stage::Reposo;
+    logicLoopHandle = nullptr;
+    vTaskDelete(nullptr);
 }
 
 void CanningMachine::stop() {
