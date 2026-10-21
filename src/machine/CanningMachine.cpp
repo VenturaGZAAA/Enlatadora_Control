@@ -21,15 +21,17 @@ void CanningMachine::setup(const bool autoUpdate) {
 
 void CanningMachine::startAutoUpdate() {
     if (autoUpdateTaskHandle == nullptr) {
+        TaskHandle_t handle = nullptr;
         xTaskCreatePinnedToCore(
             reinterpret_cast<TaskFunction_t>(autoUpdateLoop),
             "CanningMachineAutoUpdate",
             2048,
             nullptr,
             2,
-            &autoUpdateTaskHandle,
+            &handle,
             1
         );
+        autoUpdateTaskHandle = handle;
     }
 }
 
@@ -41,15 +43,17 @@ void CanningMachine::start() {
 
     if (logicLoopHandle == nullptr) {
         stage = Stage::Reposo;
+        TaskHandle_t handle = nullptr;
         xTaskCreatePinnedToCore(
             reinterpret_cast<TaskFunction_t>(run),
             "CanningMachine",
             8096,
             nullptr,
             1,
-            &logicLoopHandle,
+            &handle,
             1
         );
+        logicLoopHandle = handle;
     }
 }
 
@@ -136,20 +140,20 @@ const char *CanningMachine::stageName(const Stage s) {
 
 String CanningMachine::getSerializedState() {
     JsonDocument jsonDoc;
-    jsonDoc["running"] = machineRunning;
-    jsonDoc["emergencyStop"] = hardwarePause;
-    jsonDoc["paused"] = softwarePause;
-    jsonDoc["authorizedSystem"] = authorizedSystem;
-    jsonDoc["forcedAuthorization"] = forcedAuthorization;
-    jsonDoc["stage_name"] = stageName(stage);
-    jsonDoc["stage_num"] = static_cast<int>(stage);
+    jsonDoc["running"] = machineRunning.load();
+    jsonDoc["emergencyStop"] = hardwarePause.load();
+    jsonDoc["paused"] = softwarePause.load();
+    jsonDoc["authorizedSystem"] = authorizedSystem.load();
+    jsonDoc["forcedAuthorization"] = forcedAuthorization.load();
+    jsonDoc["stage_name"] = stageName(stage.load());
+    jsonDoc["stage_num"] = static_cast<int>(stage.load());
     const auto inputs = jsonDoc["inputs"].to<JsonObject>();
     for (int i = 0; i < NUM_INPUTS; ++i) {
-        inputs["I" + String(i)] = inputState[i];
+        inputs["I" + String(i)] = inputState[i].load();
     }
     const auto outputs = jsonDoc["outputs"].to<JsonObject>();
     for (int i = 0; i < NUM_OUTPUTS; ++i) {
-        outputs["Q" + String(i)] = outputState[i];
+        outputs["Q" + String(i)] = outputState[i].load();
     }
     String jsonOutput;
     serializeJson(jsonDoc, jsonOutput);
@@ -279,7 +283,10 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
     for (uint32_t i = 0; i < ms; i++) {
         vTaskDelay(pdMS_TO_TICKS(1));
         if (isPaused()) {
-            const auto snapshot = outputState;
+            bool snapshot[NUM_OUTPUTS];
+            for (int o = 0; o < NUM_OUTPUTS; ++o) {
+                snapshot[o] = outputState[o].load();
+            }
             allOff();
             while (isPaused()) {
                 vTaskDelay(pdMS_TO_TICKS(1));
@@ -300,13 +307,13 @@ void CanningMachine::run() {
     while (runLoop) {
         updateAuthorization();
 
-        switch (stage) {
+        switch (stage.load()) {
             case Stage::Reposo:
                 allOff();
                 if (authorizedSystem) {
                     stage = Stage::EsperaLata;
                 } else {
-                    delay(1);
+                    pausableDelay(1);
                 }
                 break;
 
@@ -314,7 +321,7 @@ void CanningMachine::run() {
                 writeOutput(16, true);
 
                 while (readInput(3) && authorizedSystem) {
-                    delay(1);
+                    pausableDelay(1);
                     updateAuthorization();
                 }
 
@@ -328,7 +335,7 @@ void CanningMachine::run() {
 
             case Stage::TopeActivo:
                 writeOutput(18, true);
-                delay(2000);
+                pausableDelay(2000);
                 stage = Stage::FrenadoYBajarTope;
                 break;
 
@@ -340,13 +347,13 @@ void CanningMachine::run() {
 
             case Stage::SubirPlataformaTolva:
                 writeOutput(17, true);
-                delay(1000);
+                pausableDelay(1000);
                 stage = Stage::Llenado;
                 break;
 
             case Stage::Llenado:
                 writeOutput(1, true);
-                delay(1000);
+                pausableDelay(1000);
                 writeOutput(1, false);
                 stage = Stage::BajarPlataformaTolva;
                 break;
@@ -360,14 +367,14 @@ void CanningMachine::run() {
                 writeOutput(16, true);
 
                 while (readInput(2)) {
-                    delay(1);
+                    pausableDelay(1);
                 }
 
                 stage = Stage::MantenerCadena2s;
                 break;
 
             case Stage::MantenerCadena2s:
-                delay(2000);
+                pausableDelay(2000);
                 writeOutput(16, false);
                 writeOutput(0, true);
                 stage = Stage::CadenaSalida10s;
@@ -379,7 +386,7 @@ void CanningMachine::run() {
                 writeOutput(12, true);
                 writeOutput(2, true);
 
-                delay(10000);
+                pausableDelay(10000);
 
                 writeOutput(11, false);
                 writeOutput(15, false);
@@ -391,7 +398,7 @@ void CanningMachine::run() {
 
             case Stage::ExtenderPiston:
                 writeOutput(4, true);
-                delay(2000);
+                pausableDelay(2000);
                 stage = Stage::BajarVentosaYTapas;
                 break;
 
@@ -413,7 +420,7 @@ void CanningMachine::run() {
                         stage = Stage::ActivarBanda3;
                         break;
                     }
-                    delay(1);
+                    pausableDelay(1);
                 }
 
                 if (stage == Stage::BajarVentosaYTapas) {
@@ -424,46 +431,46 @@ void CanningMachine::run() {
             case Stage::RetraerPiston:
                 writeOutput(4, false);
                 writeOutput(3, false);
-                delay(2000);
+                pausableDelay(2000);
                 stage = Stage::SoltarTapa;
                 break;
 
             case Stage::SoltarTapa:
                 writeOutput(6, false);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::RetraerVentosaYBajarPlataforma;
                 break;
 
             case Stage::RetraerVentosaYBajarPlataforma:
                 writeOutput(5, false);
                 writeOutput(2, false);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::BandaTransportadora3;
                 break;
 
             case Stage::BandaTransportadora3:
                 writeOutput(14, true);
                 writeOutput(7, true);
-                delay(5000);
+                pausableDelay(5000);
                 stage = Stage::DesactivarBanda3;
                 break;
 
             case Stage::DesactivarBanda3:
                 writeOutput(14, false);
-                delay(1000);
+                pausableDelay(1000);
                 stage = Stage::AsegurarPaletYSoltarTope;
                 break;
 
             case Stage::AsegurarPaletYSoltarTope:
                 writeOutput(8, true);
                 writeOutput(7, false);
-                delay(1000);
+                pausableDelay(1000);
                 stage = Stage::LevantarLata;
                 break;
 
             case Stage::LevantarLata:
                 writeOutput(9, true);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::VerificacionEstadoLata;
                 break;
 
@@ -477,25 +484,25 @@ void CanningMachine::run() {
 
             case Stage::Sellar:
                 writeOutput(13, true);
-                delay(1000);
+                pausableDelay(1000);
                 stage = Stage::ApagarMotorSellado;
                 break;
 
             case Stage::ApagarMotorSellado:
                 writeOutput(13, false);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::BajarLata;
                 break;
 
             case Stage::BajarLata:
                 writeOutput(9, false);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::DesasegurarPalet;
                 break;
 
             case Stage::DesasegurarPalet:
                 writeOutput(8, false);
-                delay(500);
+                pausableDelay(500);
                 stage = Stage::ActivarBanda3;
                 break;
 
@@ -503,7 +510,7 @@ void CanningMachine::run() {
                 writeOutput(14, true);
 
                 while (readInput(1)) {
-                    delay(1);
+                    pausableDelay(1);
                 }
 
                 stage = Stage::Apagar;
@@ -526,10 +533,9 @@ void CanningMachine::run() {
 }
 
 void CanningMachine::stop() {
-    if (logicLoopHandle != nullptr) {
+    if (TaskHandle_t handle = logicLoopHandle.exchange(nullptr); handle != nullptr) {
         Monitor::writeLine("Stopping canning machine");
-        vTaskDelete(logicLoopHandle);
-        logicLoopHandle = nullptr;
+        vTaskDelete(handle);
         allOff();
         machineRunning = false;
         forcedAuthorization = false;
@@ -539,8 +545,7 @@ void CanningMachine::stop() {
 }
 
 void CanningMachine::stopAutoUpdate() {
-    if (autoUpdateTaskHandle != nullptr) {
-        vTaskDelete(autoUpdateTaskHandle);
-        autoUpdateTaskHandle = nullptr;
+    if (TaskHandle_t handle = autoUpdateTaskHandle.exchange(nullptr); handle != nullptr) {
+        vTaskDelete(handle);
     }
 }

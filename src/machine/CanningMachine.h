@@ -11,6 +11,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <ArduinoJson.h>
+#include <atomic>
 
 
 class CanningMachine {
@@ -66,19 +67,19 @@ class CanningMachine {
     };
 
 
-    static inline bool inputState[NUM_INPUTS] = {};
-    static inline bool outputState[NUM_OUTPUTS] = {};
-    static inline bool setUp = false;
+    static inline std::atomic<bool> inputState[NUM_INPUTS] = {};
+    static inline std::atomic<bool> outputState[NUM_OUTPUTS] = {};
+    static inline std::atomic<bool> setUp{false};
 
-    static inline auto stage = Stage::Reposo;
-    static inline bool authorizedSystem = true;
-    static inline bool forcedAuthorization = false;
+    static inline std::atomic<Stage> stage{Stage::Reposo};
+    static inline std::atomic<bool> authorizedSystem{true};
+    static inline std::atomic<bool> forcedAuthorization{false};
 
-    static inline bool machineRunning = false;
-    static inline bool hardwarePause = false;
-    static inline bool softwarePause = false;
+    static inline std::atomic<bool> machineRunning{false};
+    static inline std::atomic<bool> hardwarePause{false};
+    static inline std::atomic<bool> softwarePause{false};
 
-    static inline TaskHandle_t logicLoopHandle = nullptr;
+    static inline std::atomic<TaskHandle_t> logicLoopHandle{nullptr};
 
     static void run();
 
@@ -92,7 +93,7 @@ class CanningMachine {
 
     static bool readInput(int index, bool update = false);
     static inline uint8_t autoUpdatePeriod = 10;
-    static inline TaskHandle_t autoUpdateTaskHandle = nullptr;
+    static inline std::atomic<TaskHandle_t> autoUpdateTaskHandle{nullptr};
     [[noreturn]] static void autoUpdateLoop();
 
     static Commands getCommandByName(const String& name);
@@ -108,7 +109,7 @@ class CanningMachine {
 public:
     CanningMachine() = delete;
 
-    static void setup(bool autoUpdate = false);
+    static void setup(bool autoUpdate = true);
 
     static void startAutoUpdate();
     static void stopAutoUpdate();
