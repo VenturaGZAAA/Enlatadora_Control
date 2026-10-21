@@ -128,7 +128,7 @@ const char *CanningMachine::stageName(const Stage s) {
         case Stage::BajarLata: return "BajarLata";
         case Stage::DesasegurarPalet: return "DesasegurarPalet";
         case Stage::ActivarBanda3: return "ActivarBanda3";
-        case Stage::Apagar: return "ApagarBanda3YRepetir";
+        case Stage::Apagar: return "Apagar";
     }
     return "Desconocido";
 }
@@ -140,6 +140,7 @@ String CanningMachine::getSerializedState() {
     jsonDoc["emergencyStop"] = hardwarePause;
     jsonDoc["paused"] = softwarePause;
     jsonDoc["authorized"] = authorizedSystem;
+    jsonDoc["forcedAuthorization"] = forcedAuthorization;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
     const auto inputs = jsonDoc["inputs"].to<JsonObject>();
@@ -215,8 +216,10 @@ CanningMachine::Commands CanningMachine::getCommandByName(const String &name) {
 void CanningMachine::processTextCommands(const char *command) {
     const auto cmd = String(command);
 
-    const String msg = "Command received: " + cmd;
-    Monitor::writeLine(msg);
+    if (cmd == "ForceAuthorization") {
+        forcedAuthorization = true;
+        return;
+    }
 
     processCommand(getCommandByName(cmd));
 }
@@ -268,7 +271,7 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 }
 
 void CanningMachine::updateAuthorization() {
-    if (!readInput(4,true)) authorizedSystem = true;
+    if (!readInput(4,true) || forcedAuthorization) authorizedSystem = true;
     if (readInput(5,true)) authorizedSystem = false;
 }
 
@@ -522,6 +525,7 @@ void CanningMachine::stop() {
         logicLoopHandle = nullptr;
         allOff();
         machineRunning = false;
+        forcedAuthorization = false;
         stage = Stage::Reposo;
     }
     // stopAutoUpdate();
