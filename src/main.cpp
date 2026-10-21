@@ -7,7 +7,7 @@
 #include "drivers/universal/UARTManager.h"
 #include "network/WebSeverManager.h"
 
-static auto  master = UARTManager::reserve();
+static auto master = UARTManager::reserve();
 
 void setup() {
     // SerialMonitor::init();
@@ -34,18 +34,18 @@ void setup() {
     });
 
     EvenTheRGBLedHasManagers::setColorGenerator([] {
-       if (CanningMachine::isRunning()) {
-           if (CanningMachine::isPaused()) {
-               return RGBColor::Yellow().withAlpha(0.5);
-           }
-           return RGBColor::white().withAlpha(0.5);
-       }
+        if (CanningMachine::isRunning()) {
+            if (CanningMachine::isPaused()) {
+                return RGBColor::Yellow().withAlpha(0.5);
+            }
+            return RGBColor::white().withAlpha(0.5);
+        }
         return RGBColor();
     });
 
     master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     master->registerCallback(CanningMachine::processTextCommands);
-    master->registerCallback([](const char* S) {
+    master->registerCallback([](const char *S) {
         SerialMonitor::enqueueLine("Command received: " + String(S));
     });
     master->init();
@@ -55,7 +55,13 @@ void setup() {
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
-    WebSeverManager::enableOTASupport(nullptr, nullptr);
+    WebSeverManager::enableOTASupport("admin", "admin");
+    WebSeverManager::setOnUpdateSuccessful([] {
+        CanningMachine::processTextCommands("Stop");
+        CanningMachine::allOff();
+        SerialMonitor::init();
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    });
     WebSeverManager::setup();
 }
 
