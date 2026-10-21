@@ -40,7 +40,7 @@ class CanningMachine {
         BajarLata,
         DesasegurarPalet,
         ActivarBanda3,
-        ApagarBanda3YRepetir
+        Apagar
     };
 
     enum class Commands : uint8_t {

@@ -41,7 +41,6 @@ void CanningMachine::start() {
 
     if (logicLoopHandle == nullptr) {
         stage = Stage::Reposo;
-        authorizedSystem = false;
         xTaskCreatePinnedToCore(
             reinterpret_cast<TaskFunction_t>(run),
             "CanningMachine",
@@ -129,7 +128,7 @@ const char *CanningMachine::stageName(const Stage s) {
         case Stage::BajarLata: return "BajarLata";
         case Stage::DesasegurarPalet: return "DesasegurarPalet";
         case Stage::ActivarBanda3: return "ActivarBanda3";
-        case Stage::ApagarBanda3YRepetir: return "ApagarBanda3YRepetir";
+        case Stage::Apagar: return "ApagarBanda3YRepetir";
     }
     return "Desconocido";
 }
@@ -140,6 +139,7 @@ String CanningMachine::getSerializedState() {
     jsonDoc["running"] = machineRunning;
     jsonDoc["emergencyStop"] = hardwarePause;
     jsonDoc["paused"] = softwarePause;
+    jsonDoc["authorized"] = authorizedSystem;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
     const auto inputs = jsonDoc["inputs"].to<JsonObject>();
@@ -282,10 +282,6 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
                 vTaskDelay(pdMS_TO_TICKS(1));
             }
             updateAuthorization();
-            if (!authorizedSystem) {
-                stage = Stage::Reposo;
-                return;
-            }
 
             for (int o = 0; o < NUM_OUTPUTS; o++) {
                 writeOutput(o, snapshot[o]);
@@ -506,17 +502,14 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
                     delay(1);
                 }
 
-                stage = Stage::ApagarBanda3YRepetir;
+                stage = Stage::Apagar;
                 break;
 
-            case Stage::ApagarBanda3YRepetir:
+            case Stage::Apagar:
                 writeOutput(14, false);
 
-                if (authorizedSystem) {
-                    stage = Stage::EsperaLata;
-                } else {
-                    stage = Stage::Reposo;
-                }
+                stop();
+                vTaskDelete(nullptr);
                 break;
         }
     }
@@ -529,7 +522,6 @@ void CanningMachine::stop() {
         logicLoopHandle = nullptr;
         allOff();
         machineRunning = false;
-        authorizedSystem = false;
         stage = Stage::Reposo;
     }
     // stopAutoUpdate();
