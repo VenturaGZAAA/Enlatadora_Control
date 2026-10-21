@@ -139,7 +139,7 @@ String CanningMachine::getSerializedState() {
     jsonDoc["running"] = machineRunning;
     jsonDoc["emergencyStop"] = hardwarePause;
     jsonDoc["paused"] = softwarePause;
-    jsonDoc["authorized"] = authorizedSystem;
+    jsonDoc["authorizedSystem"] = authorizedSystem;
     jsonDoc["forcedAuthorization"] = forcedAuthorization;
     jsonDoc["stage_name"] = stageName(stage);
     jsonDoc["stage_num"] = static_cast<int>(stage);
