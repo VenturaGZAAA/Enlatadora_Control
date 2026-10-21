@@ -46,7 +46,7 @@ void setup() {
     master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     master->registerCallback(CanningMachine::processTextCommands);
     master->registerCallback([](const char *S) {
-        SerialMonitor::enqueueLine("Command received: " + String(S));
+        SerialMonitor::writeLine("Command received: " + String(S));
     });
     master->init();
     WifiManager::setHostname("enlatadora-control");
@@ -67,5 +67,5 @@ void setup() {
 
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
-    master->enqueueLine(CanningMachine::getSerializedState());
+    master->writeLine(CanningMachine::getSerializedState());
 }

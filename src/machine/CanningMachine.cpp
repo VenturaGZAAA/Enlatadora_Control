@@ -35,7 +35,7 @@ void CanningMachine::startAutoUpdate() {
 
 void CanningMachine::start() {
     if (!setUp) {
-        SerialMonitor::enqueueLine("Canning machine has not been set up");
+        SerialMonitor::writeLine("Canning machine has not been set up");
         return;
     }
 
@@ -162,11 +162,11 @@ void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
         if (doc["Q" + String(i)].is<bool>()) {
             if (!authorized) {
                 if (hardwarePause) {
-                    SerialMonitor::enqueueLine("Output override while the machine is paused is not allowed");
+                    SerialMonitor::writeLine("Output override while the machine is paused is not allowed");
                     return;
                 }
                 if ((machineRunning && !softwarePause)) {
-                    SerialMonitor::enqueueLine(
+                    SerialMonitor::writeLine(
                         "Output override while the machine is running and not paused is not allowed");
                     return;
                 }
@@ -185,7 +185,7 @@ void CanningMachine::inputsWriteJsonCallback(const JsonDocument &doc) {
         }
     }
 #else
-    SerialMonitor::enqueueLine("Input override not authorized");
+    SerialMonitor::writeLine("Input override not authorized");
 #endif
 }
 
@@ -216,7 +216,7 @@ void CanningMachine::processTextCommands(const char *command) {
     const auto cmd = String(command);
 
     const String msg = "Command received: " + cmd;
-    SerialMonitor::enqueueLine(msg);
+    SerialMonitor::writeLine(msg);
 
     processCommand(getCommandByName(cmd));
 }
@@ -250,7 +250,7 @@ void CanningMachine::processCommand(const Commands command) {
             break;
 
         case Commands::Unknown:
-            SerialMonitor::enqueueLine("Unknown command");
+            SerialMonitor::writeLine("Unknown command");
             break;
     }
 }
@@ -524,7 +524,7 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
 
 void CanningMachine::stop() {
     if (logicLoopHandle != nullptr) {
-        SerialMonitor::enqueueLine("Stopping canning machine");
+        SerialMonitor::writeLine("Stopping canning machine");
         vTaskDelete(logicLoopHandle);
         logicLoopHandle = nullptr;
         allOff();
