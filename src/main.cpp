@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <machine/CanningMachine.h>
-#include <drivers/universal/Monitor.h>
+// #include <drivers/universal/Monitor.h>
 #include <drivers/universal/WifiManager.h>
 #include <drivers/universal/wifi_secrets.h>
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
@@ -10,15 +10,12 @@
 static auto master = UARTManager::reserve();
 
 void setup() {
-    // Monitor::init();
     EvenTheRGBLedHasManagers::init();
 
-    master = UARTManager::create(Serial1, 44, 43);
+    master = UARTManager::create(Serial, 44, 43);
 
 
     CanningMachine::setup(true);
-    Monitor::registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
-    Monitor::registerCallback(CanningMachine::processTextCommands);
 
 
     CanningMachine::setOnStartCallback([] {
@@ -45,9 +42,7 @@ void setup() {
 
     master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     master->registerCallback(CanningMachine::processTextCommands);
-    master->registerCallback([](const char *S) {
-        Monitor::writeLine("Command received: " + String(S));
-    });
+
     master->init();
     WifiManager::setHostname("enlatadora-control");
     WifiManager::forceSTA(SECRET_SSID,SECRET_PASSWORD);
@@ -59,7 +54,6 @@ void setup() {
     WebSeverManager::setOnUpdateSuccessful([] {
         CanningMachine::processTextCommands("Stop");
         CanningMachine::allOff();
-        Monitor::init();
         vTaskDelay(pdMS_TO_TICKS(1000));
     });
     WebSeverManager::setup();
