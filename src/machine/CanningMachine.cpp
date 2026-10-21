@@ -5,7 +5,7 @@
 #include "CanningMachine.h"
 #include <ArduinoJson.h>
 
-#include "drivers/universal/SerialMonitor.h"
+#include "drivers/universal/Monitor.h"
 #include "config/build_flags.h"
 
 #include <utility>
@@ -35,7 +35,7 @@ void CanningMachine::startAutoUpdate() {
 
 void CanningMachine::start() {
     if (!setUp) {
-        SerialMonitor::writeLine("Canning machine has not been set up");
+        Monitor::writeLine("Canning machine has not been set up");
         return;
     }
 
@@ -162,11 +162,11 @@ void CanningMachine::outputsWriteJsonCallback(const JsonDocument &doc) {
         if (doc["Q" + String(i)].is<bool>()) {
             if (!authorized) {
                 if (hardwarePause) {
-                    SerialMonitor::writeLine("Output override while the machine is paused is not allowed");
+                    Monitor::writeLine("Output override while the machine is paused is not allowed");
                     return;
                 }
                 if ((machineRunning && !softwarePause)) {
-                    SerialMonitor::writeLine(
+                    Monitor::writeLine(
                         "Output override while the machine is running and not paused is not allowed");
                     return;
                 }
@@ -185,7 +185,7 @@ void CanningMachine::inputsWriteJsonCallback(const JsonDocument &doc) {
         }
     }
 #else
-    SerialMonitor::writeLine("Input override not authorized");
+    Monitor::writeLine("Input override not authorized");
 #endif
 }
 
@@ -216,7 +216,7 @@ void CanningMachine::processTextCommands(const char *command) {
     const auto cmd = String(command);
 
     const String msg = "Command received: " + cmd;
-    SerialMonitor::writeLine(msg);
+    Monitor::writeLine(msg);
 
     processCommand(getCommandByName(cmd));
 }
@@ -250,7 +250,7 @@ void CanningMachine::processCommand(const Commands command) {
             break;
 
         case Commands::Unknown:
-            SerialMonitor::writeLine("Unknown command");
+            Monitor::writeLine("Unknown command");
             break;
     }
 }
@@ -524,7 +524,7 @@ void CanningMachine::pausableDelay(const uint32_t ms) {
 
 void CanningMachine::stop() {
     if (logicLoopHandle != nullptr) {
-        SerialMonitor::writeLine("Stopping canning machine");
+        Monitor::writeLine("Stopping canning machine");
         vTaskDelete(logicLoopHandle);
         logicLoopHandle = nullptr;
         allOff();
