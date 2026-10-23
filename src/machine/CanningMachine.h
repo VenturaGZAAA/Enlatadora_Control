@@ -72,7 +72,7 @@ class CanningMachine {
     static inline std::atomic<bool> setUp{false};
 
     static inline std::atomic<Stage> stage{Stage::Reposo};
-    static inline std::atomic<bool> authorizedSystem{true};
+    static inline std::atomic<bool> authorizedSystem{false};
     static inline std::atomic<bool> forcedAuthorization{false};
 
     static inline std::atomic<bool> machineRunning{false};

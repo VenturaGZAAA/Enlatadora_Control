@@ -276,7 +276,10 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 
 void CanningMachine::updateAuthorization() {
     if (!readInput(4, true) || forcedAuthorization) authorizedSystem = true;
-    if (readInput(5, true)) authorizedSystem = false;
+    if (readInput(5, true)) {
+        authorizedSystem = false;
+        forcedAuthorization = false;
+    }
 }
 
 void CanningMachine::pausableDelay(const uint32_t ms) {
