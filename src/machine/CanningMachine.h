@@ -133,7 +133,6 @@ public:
     static void processTextCommands(const char *command);
     static void processCommand(Commands command);
 
-
     static void setOnStopCallback(std::function<void()> callback);
 
     static void setOnStartCallback(std::function<void()> callback);
