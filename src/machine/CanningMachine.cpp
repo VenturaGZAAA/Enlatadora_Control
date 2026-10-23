@@ -237,6 +237,9 @@ void CanningMachine::processCommand(const Commands command) {
                 onStartCommand();
             break;
         case Commands::Stop:
+            if (forcedAuthorization) {
+                authorizedSystem = false;
+            }
             stop();
             softwarePause = false;
             forcedAuthorization = false;
@@ -527,8 +530,10 @@ void CanningMachine::run() {
                 break;
         }
     }
-
     allOff();
+    if (forcedAuthorization) {
+        authorizedSystem = false;
+    }
     machineRunning = false;
     forcedAuthorization = false;
     stage = Stage::Reposo;
@@ -541,6 +546,9 @@ void CanningMachine::stop() {
         Monitor::writeLine("Stopping canning machine");
         vTaskDelete(handle);
         allOff();
+        if (forcedAuthorization) {
+            authorizedSystem = false;
+        }
         machineRunning = false;
         forcedAuthorization = false;
         stage = Stage::Reposo;
