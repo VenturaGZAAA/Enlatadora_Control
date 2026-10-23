@@ -44,6 +44,7 @@ class CanningMachine {
         Apagar
     };
 
+public:
     enum class Commands : uint8_t {
         Stop = 0,
         Start,
@@ -52,6 +53,7 @@ class CanningMachine {
         Unknown
     };
 
+private:
     static const char *stageName(Stage s);
 
     static constexpr int NUM_INPUTS = 8;
@@ -92,30 +94,35 @@ class CanningMachine {
 
 
     static bool readInput(int index, bool update = false);
+
     static inline uint8_t autoUpdatePeriod = 10;
     static inline std::atomic<TaskHandle_t> autoUpdateTaskHandle{nullptr};
+
     [[noreturn]] static void autoUpdateLoop();
 
-    static Commands getCommandByName(const String& name);
-    static void processCommand(Commands command);
-    
+    static Commands getCommandByName(const String &name);
+
     static inline std::function<void()> onStopCommand = nullptr;
     static inline std::function<void()> onStartCommand = nullptr;
     static inline std::function<void()> onPauseCommand = nullptr;
 
     static void start();
+
     static void pausableDelay(uint32_t ms);
+
     static void stop();
+
 public:
     CanningMachine() = delete;
 
     static void setup(bool autoUpdate = true);
 
     static void startAutoUpdate();
+
     static void stopAutoUpdate();
 
-    static bool isRunning() {return machineRunning;}
-    static bool isPaused() {return hardwarePause || softwarePause;}
+    static bool isRunning() { return machineRunning; }
+    static bool isPaused() { return hardwarePause || softwarePause; }
 
     static String getSerializedState();
 
@@ -124,12 +131,15 @@ public:
     static void outputsWriteJsonCallback(const JsonDocument &doc);
 
     static void processTextCommands(const char *command);
+    static void processCommand(Commands command);
+
 
     static void setOnStopCallback(std::function<void()> callback);
+
     static void setOnStartCallback(std::function<void()> callback);
+
     static void setOnPauseCallback(std::function<void()> callback);
 
     static void allOff();
-
 };
 #endif //ENLATADORA_IOT_CANNINGMACHINE_H

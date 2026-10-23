@@ -52,7 +52,7 @@ void setup() {
     }
     WebSeverManager::enableOTASupport("admin", "admin");
     WebSeverManager::setOnUpdateSuccessful([] {
-        CanningMachine::processTextCommands("Stop");
+        CanningMachine::processCommand(CanningMachine::Commands::Stop);
         CanningMachine::allOff();
         vTaskDelay(pdMS_TO_TICKS(1000));
     });

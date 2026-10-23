@@ -239,6 +239,7 @@ void CanningMachine::processCommand(const Commands command) {
         case Commands::Stop:
             stop();
             softwarePause = false;
+            forcedAuthorization = false;
             if (onStopCommand)
                 onStopCommand();
             break;
