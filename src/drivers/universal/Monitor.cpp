@@ -6,7 +6,7 @@
 
 void Monitor::init(const uint64_t baudRate, const uint32_t _microsecondsDelay) {
     if (!instance) {
-        instance = UARTManager::create(Serial, -1, -1, static_cast<uint32_t>(baudRate), _microsecondsDelay);
+        instance = SerialManager::create(Serial, -1, -1, static_cast<uint32_t>(baudRate), _microsecondsDelay);
     }
     instance->init(static_cast<uint32_t>(baudRate), _microsecondsDelay);
 }
@@ -55,14 +55,12 @@ void Monitor::writeLine(const char *str) {
 
 void Monitor::registerCallback(const std::function<void(const char *)> &callback) {
     if (!instance) {
-        instance = UARTManager::create(Serial);
+        instance->registerCallback(callback);
     }
-    instance->registerCallback(callback);
 }
 
 void Monitor::registerJsonCallback(const std::function<void(JsonDocument)> &callback) {
     if (!instance) {
-        instance = UARTManager::create(Serial);
+        instance->registerJsonCallback(callback);
     }
-    instance->registerJsonCallback(callback);
 }

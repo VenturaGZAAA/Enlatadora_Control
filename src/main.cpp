@@ -4,15 +4,15 @@
 #include <drivers/universal/WifiManager.h>
 #include <drivers/universal/wifi_secrets.h>
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
-#include "drivers/universal/UARTManager.h"
+#include "drivers/universal/SerialManager.h"
 #include "network/WebSeverManager.h"
 
-static auto master = UARTManager::reserve();
+static auto master = SerialManager::reserve();
 
 void setup() {
     EvenTheRGBLedHasManagers::init();
 
-    master = UARTManager::create(Serial, 44, 43);
+    master = SerialManager::create(Serial1, 44, 43);
 
 
     CanningMachine::setup(true);

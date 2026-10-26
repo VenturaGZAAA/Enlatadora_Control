@@ -8,10 +8,10 @@
 #include <string>
 #include <functional>
 #include <ArduinoJson.h>
-#include "UARTManager.h"
+#include "SerialManager.h"
 
 class Monitor {
-    static inline  auto instance = UARTManager::reserve();
+    static inline  auto instance = SerialManager::reserve();
 
 
 public:
