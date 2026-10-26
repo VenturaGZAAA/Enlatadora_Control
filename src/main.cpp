@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <machine/CanningMachine.h>
-// #include <drivers/universal/Monitor.h>
+#include <drivers/universal/Monitor.h>
 #include <drivers/universal/WifiManager.h>
 #include <drivers/universal/wifi_secrets.h>
 #include "drivers/s3/EvenTheRGBLedHasManagers.h"
@@ -11,6 +11,9 @@ static auto master = SerialManager::reserve();
 static std::atomic<bool> updateCycle = {true};
 
 void setup() {
+    Monitor::useSerialManager(SerialManager::create(Serial,115200,20));
+    Monitor::init();
+
     EvenTheRGBLedHasManagers::init();
 
     master = SerialManager::create(Serial1, 44, 43, 115200, 20);
@@ -59,6 +62,8 @@ void setup() {
         master->writeLine(CanningMachine::getSerializedState());
         vTaskDelay(pdMS_TO_TICKS(50));
         master->writeLine("UPDATE");
+        vTaskDelay(pdMS_TO_TICKS(100));
+        master->stop();
         vTaskDelay(pdMS_TO_TICKS(1000));
     });
     WebSeverManager::setup();
