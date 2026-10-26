@@ -8,11 +8,12 @@
 #include "network/WebSeverManager.h"
 
 static auto master = SerialManager::reserve();
+static std::atomic<bool> updateCycle = {true};
 
 void setup() {
     EvenTheRGBLedHasManagers::init();
 
-    master = SerialManager::create(Serial1, 44, 43);
+    master = SerialManager::create(Serial1, 44, 43, 115200, 20);
 
 
     CanningMachine::setup(true);
@@ -52,8 +53,12 @@ void setup() {
     }
     WebSeverManager::enableOTASupport("admin", "admin");
     WebSeverManager::setOnUpdateSuccessful([] {
+        updateCycle = false;
         CanningMachine::processCommand(CanningMachine::Commands::Stop);
         CanningMachine::allOff();
+        master->writeLine(CanningMachine::getSerializedState());
+        vTaskDelay(pdMS_TO_TICKS(50));
+        master->writeLine("UPDATE");
         vTaskDelay(pdMS_TO_TICKS(1000));
     });
     WebSeverManager::setup();
@@ -61,5 +66,7 @@ void setup() {
 
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
-    master->writeLine(CanningMachine::getSerializedState());
+    if (updateCycle.load()) {
+        master->writeLine(CanningMachine::getSerializedState());
+    }
 }
