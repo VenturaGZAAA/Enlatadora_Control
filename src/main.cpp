@@ -11,7 +11,7 @@ static auto master = SerialManager::reserve();
 static std::atomic<bool> updateCycle = {true};
 
 void setup() {
-    Monitor::useSerialManager(SerialManager::create(Serial,115200,20));
+    Monitor::useSerialManager(SerialManager::createHWCDC(Serial,115200,20));
     Monitor::init();
 
     EvenTheRGBLedHasManagers::init();
@@ -44,6 +44,8 @@ void setup() {
         return RGBColor();
     });
 
+    Monitor::registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
+    Monitor::registerCallback(CanningMachine::processTextCommands);
     master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     master->registerCallback(CanningMachine::processTextCommands);
 
@@ -72,6 +74,7 @@ void setup() {
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
     if (updateCycle.load()) {
+        Monitor::writeLine("It worked!");
         master->writeLine(CanningMachine::getSerializedState());
     }
 }

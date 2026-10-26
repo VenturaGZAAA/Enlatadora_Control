@@ -14,10 +14,21 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include <memory>
+#include <Arduino.h>
+#include <HardwareSerial.h>
+#include <HWCDC.h>
 
 
 class SerialManager {
-    HardwareSerial &uartPort;
+    enum class SerialType {
+        HARDWARE_SERIAL,
+        HW_CDC
+    };
+
+    SerialType serialType;
+    HardwareSerial *hwSerial = nullptr;
+    HWCDC *cdcSerial = nullptr;
+    Stream *stream = nullptr;
     int8_t rxPin;
     int8_t txPin;
     uint32_t baudRate;
@@ -55,7 +66,7 @@ public:
         return std::unique_ptr<SerialManager>(new SerialManager(uartPort, rxPin, txPin, baudRate, period, bufferLength));
     }
 
-    static std::unique_ptr<SerialManager> create(HWCDC &serial, const uint32_t baudRate = 115200,
+    static std::unique_ptr<SerialManager> createHWCDC(HWCDC &serial, const uint32_t baudRate = 115200,
                const uint32_t period = 25, const uint32_t bufferLength = 1024) {
         return std::unique_ptr<SerialManager>(new SerialManager(serial, baudRate, period, bufferLength));
     }
