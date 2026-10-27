@@ -11,7 +11,7 @@ static auto master = SerialManager::reserve();
 static std::atomic<bool> updateCycle = {true};
 
 void setup() {
-    Monitor::useSerialManager(SerialManager::createHWCDC(Serial,115200,20));
+    Monitor::useSerialManager(SerialManager::createHWCDC(Serial, 115200, 20));
     Monitor::init();
 
     EvenTheRGBLedHasManagers::init();
@@ -56,6 +56,9 @@ void setup() {
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
+#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
+    WebSeverManager::addHandler(&Monitor::enableAsyncWebSocketHandler());
+#endif
     WebSeverManager::enableOTASupport("admin", "admin");
     WebSeverManager::setOnUpdateSuccessful([] {
         updateCycle = false;
@@ -74,7 +77,6 @@ void setup() {
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
     if (updateCycle.load()) {
-        Monitor::writeLine("It worked!");
         master->writeLine(CanningMachine::getSerializedState());
     }
 }
