@@ -220,6 +220,9 @@ CanningMachine::Commands CanningMachine::getCommandByName(const String &name) {
 void CanningMachine::processTextCommands(const char *command) {
     const auto cmd = String(command);
 
+    if (cmd == "HEARTBEAT") {
+        return;
+    }
     if (cmd == "ForceAuthorization") {
         forcedAuthorization = true;
         return;

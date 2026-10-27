@@ -9,6 +9,9 @@
 
 static auto master = SerialManager::reserve();
 static std::atomic<bool> updateCycle = {true};
+static std::atomic<unsigned long> lastHeartbeat = {0};
+static void updateHeartbeat(const char *);
+static void updateHeartbeatJson(const JsonDocument &);
 
 void setup() {
     Monitor::useSerialManager(SerialManager::createHWCDC(Serial, 115200, 20));
@@ -48,6 +51,8 @@ void setup() {
     Monitor::registerCallback(CanningMachine::processTextCommands);
     master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     master->registerCallback(CanningMachine::processTextCommands);
+    master->registerJsonCallback(updateHeartbeatJson);
+    master->registerCallback(updateHeartbeat);
 
     master->init();
     WifiManager::setHostname("enlatadora-control");
@@ -76,7 +81,14 @@ void setup() {
 
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
-    if (updateCycle.load()) {
+    if (updateCycle.load() && millis() - lastHeartbeat < 5000) {
         master->writeLine(CanningMachine::getSerializedState());
     }
+}
+
+static void updateHeartbeat(const char *)  {
+    lastHeartbeat = millis();
+}
+static void updateHeartbeatJson(const JsonDocument &doc)  {
+    lastHeartbeat = millis();
 }
