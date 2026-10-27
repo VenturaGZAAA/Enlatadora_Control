@@ -10,7 +10,9 @@
 static auto master = SerialManager::reserve();
 static std::atomic<bool> updateCycle = {true};
 static std::atomic<unsigned long> lastHeartbeat = {0};
+
 static void updateHeartbeat(const char *);
+
 static void updateHeartbeatJson(const JsonDocument &);
 
 void setup() {
@@ -77,18 +79,20 @@ void setup() {
         vTaskDelay(pdMS_TO_TICKS(1000));
     });
     WebSeverManager::setup();
+    lastHeartbeat = millis();
 }
 
 void loop() {
     vTaskDelay(pdMS_TO_TICKS(50));
-    if (updateCycle.load() && millis() - lastHeartbeat < 5000) {
+    if (updateCycle.load() && millis() - lastHeartbeat.load() < 5000) {
         master->writeLine(CanningMachine::getSerializedState());
     }
 }
 
-static void updateHeartbeat(const char *)  {
+static void updateHeartbeat(const char *) {
     lastHeartbeat = millis();
 }
-static void updateHeartbeatJson(const JsonDocument &doc)  {
+
+static void updateHeartbeatJson(const JsonDocument &doc) {
     lastHeartbeat = millis();
 }
