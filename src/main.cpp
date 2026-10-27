@@ -59,7 +59,7 @@ void setup() {
     master->init();
     WifiManager::setHostname("enlatadora-control");
     WifiManager::forceSTA(SECRET_SSID,SECRET_PASSWORD);
-    WifiManager::setup();
+    WifiManager::setup("Enlatadora-control","12345678");
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
