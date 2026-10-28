@@ -7,8 +7,9 @@
 #include "drivers/universal/SerialManager.h"
 #include "network/WebSeverManager.h"
 
+
 static auto master = SerialManager::reserve();
-static std::atomic<bool> updateCycle = {true};
+static std::atomic updateCycle = {true};
 static std::atomic<unsigned long> lastHeartbeat = {0};
 
 static void updateHeartbeat(const char *);
@@ -93,6 +94,6 @@ static void updateHeartbeat(const char *) {
     lastHeartbeat = millis();
 }
 
-static void updateHeartbeatJson(const JsonDocument &doc) {
+static void updateHeartbeatJson(const JsonDocument &) {
     lastHeartbeat = millis();
 }
