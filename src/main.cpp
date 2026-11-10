@@ -25,6 +25,7 @@ void setup() {
 
     master = SerialManager::create(Serial1, 44, 43, 115200, 20);
 
+
     CanningMachine::setup(true);
 
 
@@ -52,10 +53,10 @@ void setup() {
 
     Monitor::registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
     Monitor::registerCallback(CanningMachine::processTextCommands);
-    master->registerJsonCallback(CanningMachine::outputsWriteJsonCallback);
-    master->registerCallback(CanningMachine::processTextCommands);
-    master->registerJsonCallback(updateHeartbeatJson);
-    master->registerCallback(updateHeartbeat);
+    master->onJsonReceived += (CanningMachine::outputsWriteJsonCallback);
+    master->onCommandReceived += (CanningMachine::processTextCommands);
+    master->onJsonReceived += (updateHeartbeatJson);
+    master->onCommandReceived += (updateHeartbeat);
 
     master->init();
 
