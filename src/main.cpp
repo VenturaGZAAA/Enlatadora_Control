@@ -6,11 +6,9 @@
 #include "EvenTheRGBLedHasManagers.h"
 #include "SerialManager.h"
 #include "WebServerManager.h"
-#include "EspUsbHost.h"
-
+#include "UsbHIDManager.h"
 
 static auto master = SerialManager::reserve();
-static EspUsbHost usb;
 
 static std::atomic updateCycle = {true};
 static std::atomic<unsigned long> lastHeartbeat = {0};
@@ -18,35 +16,6 @@ static std::atomic<unsigned long> lastHeartbeat = {0};
 static void updateHeartbeat(const char *);
 
 static void updateHeartbeatJson(const JsonDocument &);
-
-static bool usbStarted;
-
-static String getModifiers(const uint8_t modifiers) {
-    String msg = "";
-    static const char *modifierNames[] = {
-        "LCTRL", "LSHIFT", "LALT", "LGUI",
-        "RCTRL", "RSHIFT", "RALT", "RGUI"
-    };
-
-    if (modifiers == 0) {
-        msg = "none";
-        return msg;
-    }
-
-    bool first = true;
-    for (int i = 0; i < 8; i++) {
-        if (modifiers & (1 << i)) {
-            if (!first) {
-                msg += "+";
-            }
-            msg += modifierNames[i];
-            first = false;
-        }
-    }
-    return msg;
-}
-
-[[noreturn]] static void handleUSB();
 
 void setup() {
     // Monitor::useSerialManager(SerialManager::createHWCDC(Serial, 115200, 20));
@@ -90,15 +59,11 @@ void setup() {
 
     master->init();
 
-
-    usb.setKeyboardLayout(ESP_USB_HOST_KEYBOARD_LAYOUT_ES_ES);
-    usb.setHubTrackingEnabled(false);
-
-    usb.onDeviceConnected([](const EspUsbHostDeviceInfo &) {
+    UsbHIDManager::onDeviceConnected += [](EspUsbHostDeviceInfo) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::blue().withAlpha(0.1), 250);
-    });
+    };
 
-    usb.onKeyboard([](const EspUsbHostKeyboardEvent &event) {
+    UsbHIDManager::onKeyboardEvent += [](const EspUsbHostKeyboardEvent &event) {
         constexpr const char *QWERTY_CHARS = "qwertyuiopasdfghjklzxcvbnm";
         int match = -1;
         for (uint8_t i = 0; i < 18; i++) {
@@ -110,7 +75,7 @@ void setup() {
         if (match < 0 || match >= 18) {
             return;
         }
-        const auto modifiers = getModifiers(event.modifiers);
+        const auto modifiers = UsbHIDManager::getModifiers(event.modifiers);
         JsonDocument doc;
         const auto key = "Q" + String(match);
         const bool CTRL = modifiers.indexOf("CTRL") >= 0;
@@ -120,9 +85,10 @@ void setup() {
             doc[key] = false;
         }
         CanningMachine::outputsWriteJsonCallback(doc);
-    });
+    };
 
-    xTaskCreatePinnedToCore(reinterpret_cast<TaskFunction_t>(handleUSB), "usbTask", 4096, nullptr, 2, nullptr, 1);
+    UsbHIDManager::forceConsumerControlCorrection();
+    UsbHIDManager::init();
     WifiManager::setHostname("enlatadora-control");
     WifiManager::forceSTA(STA_SSID,STA_PASS);
     WifiManager::setup("Enlatadora-control", "12345678");
@@ -161,20 +127,4 @@ static void updateHeartbeat(const char *) {
 
 static void updateHeartbeatJson(const JsonDocument &) {
     lastHeartbeat = millis();
-}
-
-[[noreturn]] static void handleUSB() {
-    while (true) {
-        if (!usbStarted) {
-            usbStarted = usb.begin();
-            if (!usbStarted) {
-                JsonDocument doc;
-                doc["usbFailure"] = usb.lastErrorName();
-                String output;
-                serializeJson(doc, output);
-                Monitor::writeLine(output);
-            }
-        }
-        vTaskDelay(2500);
-    }
 }
