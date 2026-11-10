@@ -5,7 +5,7 @@
 #include "CanningMachine.h"
 #include <ArduinoJson.h>
 
-#include "drivers/universal/Monitor.h"
+#include "Monitor.h"
 #include "config/build_flags.h"
 
 #include <utility>

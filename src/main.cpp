@@ -1,11 +1,11 @@
 #include <Arduino.h>
+#include <config/secrets.h>
 #include <machine/CanningMachine.h>
-#include <drivers/universal/Monitor.h>
-#include <drivers/universal/WifiManager.h>
-#include <drivers/universal/wifi_secrets.h>
-#include "drivers/s3/EvenTheRGBLedHasManagers.h"
-#include "drivers/universal/SerialManager.h"
-#include "network/WebSeverManager.h"
+#include <Monitor.h>
+#include <WifiManager.h>
+#include "EvenTheRGBLedHasManagers.h"
+#include "SerialManager.h"
+#include "WebServerManager.h"
 #include "EspUsbHost.h"
 
 
@@ -20,6 +20,7 @@ static void updateHeartbeat(const char *);
 static void updateHeartbeatJson(const JsonDocument &);
 
 static bool usbStarted;
+
 static String getModifiers(const uint8_t modifiers) {
     String msg = "";
     static const char *modifierNames[] = {
@@ -123,16 +124,16 @@ void setup() {
 
     xTaskCreatePinnedToCore(reinterpret_cast<TaskFunction_t>(handleUSB), "usbTask", 4096, nullptr, 2, nullptr, 1);
     WifiManager::setHostname("enlatadora-control");
-    WifiManager::forceSTA(SECRET_SSID,SECRET_PASSWORD);
+    WifiManager::forceSTA(STA_SSID,STA_PASS);
     WifiManager::setup("Enlatadora-control", "12345678");
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-    WebSeverManager::addHandler(&Monitor::enableAsyncWebSocketHandler());
+    WebServerManager::addHandler(&Monitor::enableAsyncWebSocketHandler());
 #endif
-    WebSeverManager::enableOTASupport("admin", "admin");
-    WebSeverManager::setOnUpdateSuccessful([] {
+    WebServerManager::enableOTASupport("admin", "admin");
+    WebServerManager::setOnUpdateSuccessful([] {
         updateCycle = false;
         CanningMachine::processCommand(CanningMachine::Commands::Stop);
         CanningMachine::allOff();
@@ -143,7 +144,7 @@ void setup() {
         master->stop();
         vTaskDelay(pdMS_TO_TICKS(1000));
     });
-    WebSeverManager::setup();
+    WebServerManager::setup();
     lastHeartbeat = millis();
 }
 
