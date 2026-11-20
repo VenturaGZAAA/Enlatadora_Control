@@ -6,6 +6,7 @@
 #include "EvenTheRGBLedHasManagers.h"
 #include "SerialManager.h"
 #include "WebServerManager.h"
+#include <WebSocketsServerManager.h>
 #include "UsbHIDManager.h"
 
 static auto master = SerialManager::reserve();
@@ -18,12 +19,14 @@ static void updateHeartbeat(const char *);
 static void updateHeartbeatJson(const JsonDocument &);
 
 void setup() {
-    // Monitor::useSerialManager(SerialManager::createHWCDC(Serial, 115200, 20));
+    auto wsManager = WebSocketsServerManager::create();
+    WebServerManager::addHandler(&wsManager->getWs());
+    Monitor::registerInstance(std::move(wsManager));
     Monitor::init();
 
     EvenTheRGBLedHasManagers::init();
 
-    master = SerialManager::create(Serial1, 44, 43, 115200, 20);
+    master = SerialManager::create(Serial0, 44, 43, 115200, 20);
 
 
     CanningMachine::setup(true);
@@ -90,15 +93,15 @@ void setup() {
 
     UsbHIDManager::forceConsumerControlCorrection();
     UsbHIDManager::init();
+    Monitor::registerJsonCallback(WifiManager::wifiConfigJsonCallback);
     WifiManager::setHostname("enlatadora-control");
     WifiManager::forceSTA(STA_SSID,STA_PASS);
     WifiManager::setup("Enlatadora-control", "12345678");
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
     }
-#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-    WebServerManager::addHandler(&Monitor::enableAsyncWebSocketHandler());
-#endif
+
+    WebServerManager::enableWifiPostEndpoint("/wifi/set");
     WebServerManager::enableOTASupport("admin", "admin");
     WebServerManager::setOnUpdateSuccessful([] {
         updateCycle = false;
