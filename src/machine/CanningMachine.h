@@ -45,6 +45,39 @@ class CanningMachine {
     };
 
 public:
+    enum class Inputs : uint8_t {
+        VerificarEstadoLata = 40,
+        SensorFinal = 39,
+        SensorEsquina1 = 38,
+        SensorEntrada = 37,
+        BotonAutorizacion = 36,
+        BotonDesautorizacion = 35,
+        NoSeUsa = 0,
+        EtapaPonerTapaPiston = 45
+    };
+
+    enum class Outputs : uint8_t {
+        PlataformaElevador1 = 18,
+        TapaTanque = 17,
+        PlataformaElevador2 = 16,
+        ElevadorTapas = 15,
+        ExtenderPiston = 7,
+        BajarVentosaPiston = 6,
+        VentosaPiston = 5,
+        MiniTopeFinal = 4,
+        AsegurarPallet = 13,
+        ElevadorLata = 12,
+        DisconectedOrUnknown = 11,
+        BandaElevador1 = 10,
+        BandaElevador2 = 9,
+        MotorSellador = 46,
+        BandaGrande3 = 3,
+        BandaGrande2 = 8,
+        BandaGrande1 = 41,
+        Plataforma1 = 42,
+        Tope1 = 2
+    };
+
     enum class Commands : uint8_t {
         Stop = 0,
         Start,
@@ -53,19 +86,82 @@ public:
         Unknown
     };
 
+    static constexpr int getInputIndex(Inputs in) {
+        switch (in) {
+            case Inputs::VerificarEstadoLata: return 0;
+            case Inputs::SensorFinal: return 1;
+            case Inputs::SensorEsquina1: return 2;
+            case Inputs::SensorEntrada: return 3;
+            case Inputs::BotonAutorizacion: return 4;
+            case Inputs::BotonDesautorizacion: return 5;
+            case Inputs::NoSeUsa: return 6;
+            case Inputs::EtapaPonerTapaPiston: return 7;
+        }
+        return -1;
+    }
+
+    static constexpr int getOutputIndex(Outputs out) {
+        switch (out) {
+            case Outputs::PlataformaElevador1: return 0;
+            case Outputs::TapaTanque: return 1;
+            case Outputs::PlataformaElevador2: return 2;
+            case Outputs::ElevadorTapas: return 3;
+            case Outputs::ExtenderPiston: return 4;
+            case Outputs::BajarVentosaPiston: return 5;
+            case Outputs::VentosaPiston: return 6;
+            case Outputs::MiniTopeFinal: return 7;
+            case Outputs::AsegurarPallet: return 8;
+            case Outputs::ElevadorLata: return 9;
+            case Outputs::DisconectedOrUnknown: return 10;
+            case Outputs::BandaElevador1: return 11;
+            case Outputs::BandaElevador2: return 12;
+            case Outputs::MotorSellador: return 13;
+            case Outputs::BandaGrande3: return 14;
+            case Outputs::BandaGrande2: return 15;
+            case Outputs::BandaGrande1: return 16;
+            case Outputs::Plataforma1: return 17;
+            case Outputs::Tope1: return 18;
+        }
+        return -1;
+    }
+
 private:
     static const char *stageName(Stage s);
 
     static constexpr int NUM_INPUTS = 8;
     static constexpr int NUM_OUTPUTS = 19;
 
-    static constexpr int IN_PINS[NUM_INPUTS] = {
-        40, 39, 38, 37, 36, 35, 0, 45
+    static constexpr uint8_t IN_PINS[NUM_INPUTS] = {
+        static_cast<uint8_t>(Inputs::VerificarEstadoLata),
+        static_cast<uint8_t>(Inputs::SensorFinal),
+        static_cast<uint8_t>(Inputs::SensorEsquina1),
+        static_cast<uint8_t>(Inputs::SensorEntrada),
+        static_cast<uint8_t>(Inputs::BotonAutorizacion),
+        static_cast<uint8_t>(Inputs::BotonDesautorizacion),
+        static_cast<uint8_t>(Inputs::NoSeUsa),
+        static_cast<uint8_t>(Inputs::EtapaPonerTapaPiston)
     };
 
-    static constexpr int ACTUATOR_PINS[NUM_OUTPUTS] = {
-        18, 17, 16, 15, 7, 6, 5, 4, 13, 12,
-        11, 10, 9, 46, 3, 8, 41, 42, 2
+    static constexpr uint8_t ACTUATOR_PINS[NUM_OUTPUTS] = {
+        static_cast<uint8_t>(Outputs::PlataformaElevador1),
+        static_cast<uint8_t>(Outputs::TapaTanque),
+        static_cast<uint8_t>(Outputs::PlataformaElevador2),
+        static_cast<uint8_t>(Outputs::ElevadorTapas),
+        static_cast<uint8_t>(Outputs::ExtenderPiston),
+        static_cast<uint8_t>(Outputs::BajarVentosaPiston),
+        static_cast<uint8_t>(Outputs::VentosaPiston),
+        static_cast<uint8_t>(Outputs::MiniTopeFinal),
+        static_cast<uint8_t>(Outputs::AsegurarPallet),
+        static_cast<uint8_t>(Outputs::ElevadorLata),
+        static_cast<uint8_t>(Outputs::DisconectedOrUnknown),
+        static_cast<uint8_t>(Outputs::BandaElevador1),
+        static_cast<uint8_t>(Outputs::BandaElevador2),
+        static_cast<uint8_t>(Outputs::MotorSellador),
+        static_cast<uint8_t>(Outputs::BandaGrande3),
+        static_cast<uint8_t>(Outputs::BandaGrande2),
+        static_cast<uint8_t>(Outputs::BandaGrande1),
+        static_cast<uint8_t>(Outputs::Plataforma1),
+        static_cast<uint8_t>(Outputs::Tope1)
     };
 
 
@@ -90,9 +186,10 @@ private:
     static void updateAuthorization();
 
 
+    static void writeOutput(Outputs output, bool value);
     static void writeOutput(int index, bool value);
 
-
+    static bool readInput(Inputs input, bool update = false);
     static bool readInput(int index, bool update = false);
 
     static inline uint8_t autoUpdatePeriod = 10;

@@ -58,6 +58,58 @@ void CanningMachine::start() {
 }
 
 void CanningMachine::configurePins() {
+    static_assert(sizeof(IN_PINS) / sizeof(IN_PINS[0]) == 8, "NUM_INPUTS must be 8");
+    static_assert(sizeof(ACTUATOR_PINS) / sizeof(ACTUATOR_PINS[0]) == 19, "NUM_OUTPUTS must be 19");
+
+    static_assert(IN_PINS[0] == 40 && IN_PINS[1] == 39 &&
+                  IN_PINS[2] == 38 && IN_PINS[3] == 37 &&
+                  IN_PINS[4] == 36 && IN_PINS[5] == 35 &&
+                  IN_PINS[6] == 0 && IN_PINS[7] == 45,
+                  "Input pin assignments mismatch");
+
+    static_assert(ACTUATOR_PINS[0] == 18 && ACTUATOR_PINS[1] == 17 &&
+                  ACTUATOR_PINS[2] == 16 && ACTUATOR_PINS[3] == 15 &&
+                  ACTUATOR_PINS[4] == 7 && ACTUATOR_PINS[5] == 6 &&
+                  ACTUATOR_PINS[6] == 5 && ACTUATOR_PINS[7] == 4 &&
+                  ACTUATOR_PINS[8] == 13 && ACTUATOR_PINS[9] == 12 &&
+                  ACTUATOR_PINS[10] == 11 && ACTUATOR_PINS[11] == 10 &&
+                  ACTUATOR_PINS[12] == 9 && ACTUATOR_PINS[13] == 46 &&
+                  ACTUATOR_PINS[14] == 3 && ACTUATOR_PINS[15] == 8 &&
+                  ACTUATOR_PINS[16] == 41 && ACTUATOR_PINS[17] == 42 &&
+                  ACTUATOR_PINS[18] == 2,
+                  "Actuator pin assignments mismatch");
+
+    static_assert(getInputIndex(Inputs::VerificarEstadoLata) == 0 &&
+                  getInputIndex(Inputs::SensorFinal) == 1 &&
+                  getInputIndex(Inputs::SensorEsquina1) == 2 &&
+                  getInputIndex(Inputs::SensorEntrada) == 3 &&
+                  getInputIndex(Inputs::BotonAutorizacion) == 4 &&
+                  getInputIndex(Inputs::BotonDesautorizacion) == 5 &&
+                  getInputIndex(Inputs::NoSeUsa) == 6 &&
+                  getInputIndex(Inputs::EtapaPonerTapaPiston) == 7,
+                  "Input index mapping mismatch");
+
+    static_assert(getOutputIndex(Outputs::PlataformaElevador1) == 0 &&
+                  getOutputIndex(Outputs::TapaTanque) == 1 &&
+                  getOutputIndex(Outputs::PlataformaElevador2) == 2 &&
+                  getOutputIndex(Outputs::ElevadorTapas) == 3 &&
+                  getOutputIndex(Outputs::ExtenderPiston) == 4 &&
+                  getOutputIndex(Outputs::BajarVentosaPiston) == 5 &&
+                  getOutputIndex(Outputs::VentosaPiston) == 6 &&
+                  getOutputIndex(Outputs::MiniTopeFinal) == 7 &&
+                  getOutputIndex(Outputs::AsegurarPallet) == 8 &&
+                  getOutputIndex(Outputs::ElevadorLata) == 9 &&
+                  getOutputIndex(Outputs::DisconectedOrUnknown) == 10 &&
+                  getOutputIndex(Outputs::BandaElevador1) == 11 &&
+                  getOutputIndex(Outputs::BandaElevador2) == 12 &&
+                  getOutputIndex(Outputs::MotorSellador) == 13 &&
+                  getOutputIndex(Outputs::BandaGrande3) == 14 &&
+                  getOutputIndex(Outputs::BandaGrande2) == 15 &&
+                  getOutputIndex(Outputs::BandaGrande1) == 16 &&
+                  getOutputIndex(Outputs::Plataforma1) == 17 &&
+                  getOutputIndex(Outputs::Tope1) == 18,
+                  "Output index mapping mismatch");
+
     for (int i = 0; i < NUM_INPUTS; ++i) {
 #ifndef INPUT_LOGIC_TEST
         pinMode(IN_PINS[i], INPUT);
@@ -78,14 +130,31 @@ void CanningMachine::configurePins() {
     }
 }
 
+void CanningMachine::writeOutput(const Outputs output, const bool value) {
+    const int index = getOutputIndex(output);
+    if (index >= 0) {
+        writeOutput(index, value);
+    }
+}
+
 void CanningMachine::writeOutput(const int index, const bool value) {
+    if (index < 0 || index >= NUM_OUTPUTS) return;
     outputState[index] = value;
 #ifndef DISABLE_REAL_OUTPUT
     digitalWrite(ACTUATOR_PINS[index], value ? HIGH : LOW);
 #endif
 }
 
+bool CanningMachine::readInput(const Inputs input, const bool update) {
+    const int index = getInputIndex(input);
+    if (index >= 0) {
+        return readInput(index, update);
+    }
+    return false;
+}
+
 bool CanningMachine::readInput(const int index, const bool update) {
+    if (index < 0 || index >= NUM_INPUTS) return false;
 #ifndef INPUT_LOGIC_TEST
     if (update) {
         inputState[index] = digitalRead(IN_PINS[index]) == HIGH;
@@ -282,8 +351,8 @@ void CanningMachine::setOnPauseCallback(std::function<void()> callback) {
 }
 
 void CanningMachine::updateAuthorization() {
-    if (!readInput(4, true) || forcedAuthorization) authorizedSystem = true;
-    if (readInput(5, true)) {
+    if (!readInput(Inputs::BotonAutorizacion, true) || forcedAuthorization) authorizedSystem = true;
+    if (readInput(Inputs::BotonDesautorizacion, true)) {
         authorizedSystem = false;
         forcedAuthorization = false;
     }
@@ -328,15 +397,15 @@ void CanningMachine::run() {
                 break;
 
             case Stage::EsperaLata:
-                writeOutput(16, true);
+                writeOutput(Outputs::BandaGrande1, true);
 
-                while (readInput(3) && authorizedSystem) {
+                while (readInput(Inputs::SensorEntrada) && authorizedSystem) {
                     pausableDelay(1);
                     updateAuthorization();
                 }
 
                 // Original priority: sensor first, then authorization.
-                if (!readInput(3)) {
+                if (!readInput(Inputs::SensorEntrada)) {
                     stage = Stage::TopeActivo;
                 } else if (!authorizedSystem) {
                     stage = Stage::Reposo;
@@ -344,39 +413,39 @@ void CanningMachine::run() {
                 break;
 
             case Stage::TopeActivo:
-                writeOutput(18, true);
+                writeOutput(Outputs::Tope1, true);
                 pausableDelay(2000);
                 stage = Stage::FrenadoYBajarTope;
                 break;
 
             case Stage::FrenadoYBajarTope:
-                writeOutput(16, false);
-                writeOutput(18, false);
+                writeOutput(Outputs::BandaGrande1, false);
+                writeOutput(Outputs::Tope1, false);
                 stage = Stage::SubirPlataformaTolva;
                 break;
 
             case Stage::SubirPlataformaTolva:
-                writeOutput(17, true);
+                writeOutput(Outputs::Plataforma1, true);
                 pausableDelay(1000);
                 stage = Stage::Llenado;
                 break;
 
             case Stage::Llenado:
-                writeOutput(1, true);
+                writeOutput(Outputs::TapaTanque, true);
                 pausableDelay(1000);
-                writeOutput(1, false);
+                writeOutput(Outputs::TapaTanque, false);
                 stage = Stage::BajarPlataformaTolva;
                 break;
 
             case Stage::BajarPlataformaTolva:
-                writeOutput(17, false);
+                writeOutput(Outputs::Plataforma1, false);
                 stage = Stage::TrasladoAPlataformaSalida;
                 break;
 
             case Stage::TrasladoAPlataformaSalida:
-                writeOutput(16, true);
+                writeOutput(Outputs::BandaGrande1, true);
 
-                while (readInput(2)) {
+                while (readInput(Inputs::SensorEsquina1)) {
                     pausableDelay(1);
                 }
 
@@ -385,47 +454,47 @@ void CanningMachine::run() {
 
             case Stage::MantenerCadena2s:
                 pausableDelay(2000);
-                writeOutput(16, false);
-                writeOutput(0, true);
+                writeOutput(Outputs::BandaGrande1, false);
+                writeOutput(Outputs::PlataformaElevador1, true);
                 stage = Stage::CadenaSalida10s;
                 break;
 
             case Stage::CadenaSalida10s:
-                writeOutput(11, true);
-                writeOutput(15, true);
-                writeOutput(12, true);
-                writeOutput(2, true);
+                writeOutput(Outputs::BandaElevador1, true);
+                writeOutput(Outputs::BandaGrande2, true);
+                writeOutput(Outputs::BandaElevador2, true);
+                writeOutput(Outputs::PlataformaElevador2, true);
 
                 pausableDelay(10000);
 
-                writeOutput(11, false);
-                writeOutput(15, false);
-                writeOutput(12, false);
-                writeOutput(0, false);
+                writeOutput(Outputs::BandaElevador1, false);
+                writeOutput(Outputs::BandaGrande2, false);
+                writeOutput(Outputs::BandaElevador2, false);
+                writeOutput(Outputs::PlataformaElevador1, false);
 
                 stage = Stage::ExtenderPiston;
                 break;
 
             case Stage::ExtenderPiston:
-                writeOutput(4, true);
+                writeOutput(Outputs::ExtenderPiston, true);
                 pausableDelay(2000);
                 stage = Stage::BajarVentosaYTapas;
                 break;
 
             case Stage::BajarVentosaYTapas:
-                writeOutput(5, true);
-                writeOutput(6, true);
-                writeOutput(3, true);
+                writeOutput(Outputs::BajarVentosaPiston, true);
+                writeOutput(Outputs::VentosaPiston, true);
+                writeOutput(Outputs::ElevadorTapas, true);
 
                 // Original: waits 1000 ms OR until IN_PINS[7] goes LOW.
                 // Poll at 1 ms to preserve the sensor override.
                 for (int i = 0; i < 1000; ++i) {
-                    if (!readInput(7)) {
-                        writeOutput(4, false);
-                        writeOutput(3, false);
-                        writeOutput(6, false);
-                        writeOutput(5, false);
-                        writeOutput(2, false);
+                    if (!readInput(Inputs::EtapaPonerTapaPiston)) {
+                        writeOutput(Outputs::ExtenderPiston, false);
+                        writeOutput(Outputs::ElevadorTapas, false);
+                        writeOutput(Outputs::VentosaPiston, false);
+                        writeOutput(Outputs::BajarVentosaPiston, false);
+                        writeOutput(Outputs::PlataformaElevador2, false);
 
                         stage = Stage::ActivarBanda3;
                         break;
@@ -439,53 +508,53 @@ void CanningMachine::run() {
                 break;
 
             case Stage::RetraerPiston:
-                writeOutput(4, false);
-                writeOutput(3, false);
+                writeOutput(Outputs::ExtenderPiston, false);
+                writeOutput(Outputs::ElevadorTapas, false);
                 pausableDelay(2000);
                 stage = Stage::SoltarTapa;
                 break;
 
             case Stage::SoltarTapa:
-                writeOutput(6, false);
+                writeOutput(Outputs::VentosaPiston, false);
                 pausableDelay(500);
                 stage = Stage::RetraerVentosaYBajarPlataforma;
                 break;
 
             case Stage::RetraerVentosaYBajarPlataforma:
-                writeOutput(5, false);
-                writeOutput(2, false);
+                writeOutput(Outputs::BajarVentosaPiston, false);
+                writeOutput(Outputs::PlataformaElevador2, false);
                 pausableDelay(500);
                 stage = Stage::BandaTransportadora3;
                 break;
 
             case Stage::BandaTransportadora3:
-                writeOutput(14, true);
-                writeOutput(7, true);
+                writeOutput(Outputs::BandaGrande3, true);
+                writeOutput(Outputs::MiniTopeFinal, true);
                 pausableDelay(5000);
                 stage = Stage::DesactivarBanda3;
                 break;
 
             case Stage::DesactivarBanda3:
-                writeOutput(14, false);
+                writeOutput(Outputs::BandaGrande3, false);
                 pausableDelay(1000);
                 stage = Stage::AsegurarPaletYSoltarTope;
                 break;
 
             case Stage::AsegurarPaletYSoltarTope:
-                writeOutput(8, true);
-                writeOutput(7, false);
+                writeOutput(Outputs::AsegurarPallet, true);
+                writeOutput(Outputs::MiniTopeFinal, false);
                 pausableDelay(1000);
                 stage = Stage::LevantarLata;
                 break;
 
             case Stage::LevantarLata:
-                writeOutput(9, true);
+                writeOutput(Outputs::ElevadorLata, true);
                 pausableDelay(500);
                 stage = Stage::VerificacionEstadoLata;
                 break;
 
             case Stage::VerificacionEstadoLata:
-                if (readInput(0)) {
+                if (readInput(Inputs::VerificarEstadoLata)) {
                     stage = Stage::BajarLata;
                 } else {
                     stage = Stage::Sellar;
@@ -493,33 +562,33 @@ void CanningMachine::run() {
                 break;
 
             case Stage::Sellar:
-                writeOutput(13, true);
+                writeOutput(Outputs::MotorSellador, true);
                 pausableDelay(1000);
                 stage = Stage::ApagarMotorSellado;
                 break;
 
             case Stage::ApagarMotorSellado:
-                writeOutput(13, false);
+                writeOutput(Outputs::MotorSellador, false);
                 pausableDelay(500);
                 stage = Stage::BajarLata;
                 break;
 
             case Stage::BajarLata:
-                writeOutput(9, false);
+                writeOutput(Outputs::ElevadorLata, false);
                 pausableDelay(500);
                 stage = Stage::DesasegurarPalet;
                 break;
 
             case Stage::DesasegurarPalet:
-                writeOutput(8, false);
+                writeOutput(Outputs::AsegurarPallet, false);
                 pausableDelay(500);
                 stage = Stage::ActivarBanda3;
                 break;
 
             case Stage::ActivarBanda3:
-                writeOutput(14, true);
+                writeOutput(Outputs::BandaGrande3, true);
 
-                while (readInput(1)) {
+                while (readInput(Inputs::SensorFinal)) {
                     pausableDelay(1);
                 }
 
@@ -527,7 +596,7 @@ void CanningMachine::run() {
                 break;
 
             case Stage::Apagar:
-                writeOutput(14, false);
+                writeOutput(Outputs::BandaGrande3, false);
 
                 runLoop = false;
                 break;

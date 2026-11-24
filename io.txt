@@ -1,0 +1,33 @@
+inputs{:
+	0 verificar estado de lata, tal vez no sirva?
+    1  Sensor final
+`   2 sensor esquina 1
+    3 sensor entrada
+    4 boton de autorizacion
+    5 boton de des autizacion
+    6 NO SE USA
+    7 tal vez no sirva? Etapa de poner tapa con piston
+    8 NO SE USA
+}
+
+outputs: {
+	0 - PlataformaElevador1
+    1 - TapaTanque
+    2 - PlataformaElevador2
+    3 - ElevadorTapas
+    4 - ExtenderPiston
+    5 - BajarVentosaPiston
+    6 - VentosaPiston
+    7 - MiniTopeFinal
+    8 - AsegurarPallet
+    9 - ElevadorLata
+    10 - DISCONECTED_OR_UNKNOWN
+    11 - BandaElevador1
+    12 - BandaElevador2
+    13 - MotorSellador
+    14 - BandaGrande3
+    15 - BandaGrande2
+    16 - BandaGrande1
+    17 - Plataforma1
+    18 - Tope1
+}
