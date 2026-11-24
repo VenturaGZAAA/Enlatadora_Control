@@ -95,7 +95,7 @@ void setup() {
     UsbHIDManager::init();
     Monitor::registerJsonCallback(WifiManager::wifiConfigJsonCallback);
     WifiManager::setHostname("enlatadora-control");
-    WifiManager::forceSTA(STA_SSID,STA_PASS);
+    WifiManager::setDefaultSTA(STA_SSID,STA_PASS);
     WifiManager::setup("Enlatadora-control", "12345678");
     if (WifiManager::isConnected()) {
         EvenTheRGBLedHasManagers::setColor(RGBColor::Green(), 1000);
